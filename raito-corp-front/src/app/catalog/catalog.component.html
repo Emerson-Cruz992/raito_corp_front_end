@@ -1,0 +1,245 @@
+<!-- Header Simplificado -->
+<header class="catalog-header">
+  <div class="header-container">
+    <button class="back-button" routerLink="/">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Voltar
+    </button>
+    <div class="logo-section">
+      <div class="logo-icon">
+        <div class="logo-circle"></div>
+      </div>
+      <div class="logo-text">
+        <h1>Raitõ Corp</h1>
+        <p>Catálogo de Produtos</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Hero Section -->
+<section class="catalog-hero">
+  <div class="hero-content">
+    <h2>Catálogo Completo de Produtos</h2>
+    <p>Explore nossa linha completa de soluções em iluminação. Produtos de alta qualidade para transformar qualquer ambiente.</p>
+    
+    <!-- Estatísticas -->
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-number">{{ getStats().total }}</div>
+        <div class="stat-label">Produtos</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">{{ getStats().categories }}</div>
+        <div class="stat-label">Categorias</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">{{ getStats().new }}</div>
+        <div class="stat-label">Novidades</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">{{ getStats().promotions }}</div>
+        <div class="stat-label">Promoções</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Catálogo Principal -->
+<section class="catalog-main">
+  <div class="catalog-container">
+    
+    <!-- Filtros Laterais -->
+    <aside class="filters-sidebar">
+      <div class="filters-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+        Filtros
+      </div>
+
+      <!-- Busca -->
+      <div class="filter-section">
+        <h3>Buscar</h3>
+        <div class="search-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input 
+            type="text" 
+            placeholder="Nome do produto..." 
+            [(ngModel)]="searchTerm"
+            (input)="onSearch()">
+        </div>
+      </div>
+
+      <!-- Categorias -->
+      <div class="filter-section">
+        <h3>Categorias</h3>
+        <div class="category-list">
+          <button 
+            *ngFor="let category of categories"
+            class="category-item"
+            [class.active]="selectedCategory === category.slug"
+            (click)="onCategoryChange(category.slug)">
+            <span class="category-name">{{ category.name }}</span>
+            <span class="category-count">{{ category.count }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtros Rápidos -->
+      <div class="filter-section">
+        <h3>Filtros Rápidos</h3>
+        <div class="quick-filters">
+          <label class="filter-checkbox">
+            <input 
+              type="checkbox" 
+              [checked]="showPromotionsOnly"
+              (change)="onQuickFilter('promotions')">
+            <span>Apenas Promoções</span>
+          </label>
+          <label class="filter-checkbox">
+            <input 
+              type="checkbox" 
+              [checked]="showNewOnly"
+              (change)="onQuickFilter('new')">
+            <span>Apenas Novidades</span>
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Área de Produtos -->
+    <main class="products-area">
+      
+      <!-- Cabeçalho da Lista -->
+      <div class="products-header">
+        <div class="results-info">
+          <span class="results-count">{{ currentProducts.length }} produtos encontrados</span>
+        </div>
+        <div class="sort-controls">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <line x1="9" y1="9" x2="15" y2="9"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          <span>Destaques</span>
+          <select [(ngModel)]="sortBy" (change)="onSortChange()">
+            <option value="default">Padrão</option>
+            <option value="price-asc">Menor Preço</option>
+            <option value="price-desc">Maior Preço</option>
+            <option value="name">Nome A-Z</option>
+            <option value="newest">Mais Novos</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Grid de Produtos -->
+      <div class="products-grid">
+        <div class="product-card" *ngFor="let product of currentProducts" (click)="openDetail(product)">
+          <div class="product-image">
+            <img [src]="product.image" [alt]="product.name" loading="lazy" (click)="openDetail(product); $event.stopPropagation()">
+            <div class="product-badges" *ngIf="product.badges.length > 0">
+              <span 
+                *ngFor="let badge of product.badges" 
+                class="badge"
+                [class.badge-new]="badge === 'Novo'"
+                [class.badge-promotion]="badge === 'Promoção'">
+                {{ badge }}
+              </span>
+            </div>
+            <div class="product-overlay" (click)="openDetail(product)">
+              <button class="view-product-btn" (click)="openDetail(product); $event.stopPropagation()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Ver Detalhes
+              </button>
+            </div>
+          </div>
+          
+          <div class="product-info">
+            <div class="product-category">{{ product.category }}</div>
+            <h3 class="product-name">{{ product.name }}</h3>
+            <div class="product-pricing">
+              <span class="current-price">{{ formatPrice(product.price) }}</span>
+              <span class="original-price" *ngIf="product.originalPrice">
+                {{ formatPrice(product.originalPrice) }}
+              </span>
+            </div>
+            <button class="add-cart-btn" (click)="$event.stopPropagation()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              Adicionar ao Carrinho
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensagem quando não há produtos -->
+      <div class="no-products" *ngIf="currentProducts.length === 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        <h3>Nenhum produto encontrado</h3>
+        <p>Tente ajustar os filtros ou termos de busca.</p>
+        <button class="clear-filters-btn" (click)="selectedCategory = 'todos'; searchTerm = ''; showPromotionsOnly = false; showNewOnly = false; applyFilters()">
+          Limpar Filtros
+        </button>
+      </div>
+
+    </main>
+  </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="newsletter-section">
+  <div class="newsletter-container">
+    <div class="newsletter-content">
+      <h3>Fique por dentro das novidades</h3>
+      <p>Receba informações sobre lançamentos, promoções e dicas de iluminação.</p>
+      <div class="newsletter-form">
+        <input type="email" placeholder="Seu melhor e-mail">
+        <button type="submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+          Assinar
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="catalog-footer">
+  <div class="footer-content">
+    <div class="footer-info">
+      <div class="footer-logo">
+        <div class="logo-circle-white"></div>
+        <div>
+          <h3>Raitõ Corp - Soluções de iluminação</h3>
+        </div>
+      </div>
+      <p>© 2024 Raitõ Corp. Transformando ambientes através da iluminação inteligente.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Modal de Detalhes do Produto -->
+<app-product-detail 
+  [open]="isDetailOpen" 
+  [product]="mapToDetail(selectedProduct)" 
+  (closed)="closeDetail()">
+</app-product-detail>

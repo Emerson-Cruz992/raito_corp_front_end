@@ -1,0 +1,62 @@
+<header class="cart-header">
+  <div class="container">
+    <div class="title-block">
+      <h2>Seu Carrinho</h2>
+      <p class="subtitle">Confira os itens adicionados e prossiga para o login para finalizar a compra.</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/catalogo" class="back-link">Continuar comprando</a>
+      <a routerLink="/login" class="btn primary">Finalizar com Login</a>
+    </div>
+  </div>
+</header>
+
+<section class="cart-section" *ngIf="items.length > 0; else emptyState">
+  <div class="container">
+    <div class="cart-list">
+      <div class="cart-item" *ngFor="let it of items">
+        <img [src]="it.image" [alt]="it.name">
+        <div class="info">
+          <h3>{{ it.name }}</h3>
+          <div class="price">{{ it.price | currency:'BRL' }}</div>
+          <div class="qty-controls">
+            <button (click)="dec(it)">-</button>
+            <span>{{ it.qty }}</span>
+            <button (click)="inc(it)">+</button>
+          </div>
+        </div>
+        <div class="subtotal">{{ (it.price * it.qty) | currency:'BRL' }}</div>
+        <button class="remove" (click)="remove(it)">Remover</button>
+      </div>
+    </div>
+
+    <div class="cart-summary">
+      <div class="line">
+        <span>Itens</span>
+        <strong>{{ items.length }}</strong>
+      </div>
+      <div class="line">
+        <span>Frete</span>
+        <strong>Calcular no checkout</strong>
+      </div>
+      <div class="line total">
+        <span>Total</span>
+        <strong>{{ total | currency:'BRL' }}</strong>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" (click)="clear()">Limpar Carrinho</button>
+        <a class="btn primary" routerLink="/login">Finalizar com Login</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #emptyState>
+  <section class="empty">
+    <div class="container">
+      <h3>Seu carrinho está vazio</h3>
+      <p>Adicione produtos para continuar.</p>
+      <a routerLink="/catalogo" class="btn primary">Ver Produtos</a>
+    </div>
+  </section>
+</ng-template>

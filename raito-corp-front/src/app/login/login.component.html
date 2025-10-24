@@ -1,0 +1,30 @@
+<section class="login">
+  <div class="container">
+    <div class="card">
+      <div class="brand">
+        <div class="logo-circle"></div>
+        <h2>Entrar</h2>
+        <p>Acesse sua conta para finalizar a compra</p>
+      </div>
+      <form (ngSubmit)="onSubmit()">
+        <label>
+          E-mail
+          <input type="email" [(ngModel)]="form.email" name="email" required placeholder="seu@email.com">
+        </label>
+        <label>
+          Senha
+          <input type="password" [(ngModel)]="form.password" name="password" required placeholder="Sua senha">
+        </label>
+        <label class="remember">
+          <input type="checkbox" [(ngModel)]="form.remember" name="remember"> Manter conectado
+        </label>
+        <button type="submit" class="primary">Entrar</button>
+      </form>
+      <div class="links">
+        <a routerLink="/catalogo">Voltar ao catálogo</a>
+        <a href="#">Criar conta</a>
+        <a href="#">Esqueci minha senha</a>
+      </div>
+    </div>
+  </div>
+</section>

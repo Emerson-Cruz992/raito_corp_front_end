@@ -1,0 +1,310 @@
+<!-- Header -->
+<header class="header">
+  <div class="header-container">
+    <div class="logo-section">
+      <div class="logo-icon">
+        <div class="logo-circle"></div>
+      </div>
+      <div class="logo-text">
+        <h1>Raitõ Corp</h1>
+        <p>Soluções de iluminação</p>
+      </div>
+    </div>
+    <div class="nav-center">
+      <nav class="nav-menu">
+        <a routerLink="/catalogo">Produtos</a>
+        <a href="#visualizador">Visualizador 3D</a>
+      </nav>
+    </div>
+    <div class="header-icons">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.35-4.35"></path>
+      </svg>
+      <a class="icon cart-link" routerLink="/carrinho" title="Carrinho">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="9" cy="21" r="1"/>
+          <circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        <span class="cart-badge" *ngIf="getCartCount() > 0">{{ getCartCount() }}</span>
+      </a>
+      <a class="login-btn" routerLink="/login" title="Entrar">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- Hero Section -->
+<section class="hero" id="inicio">
+  <div class="hero-content">
+    <div class="hero-icon">
+      <svg viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="48" fill="black" stroke="white" stroke-width="2"/>
+        <path d="M35 35 L50 20 L65 35 L65 70 Q50 75 35 70 Z" fill="white"/>
+        <line x1="50" y1="70" x2="50" y2="85" stroke="white" stroke-width="3"/>
+        <rect x="40" y="85" width="20" height="8" fill="white"/>
+      </svg>
+    </div>
+    <h2 class="hero-title">Transforme seus ambientes com soluções de iluminação inteligentes</h2>
+    <p class="hero-description">
+      Oferecemos produtos de alta qualidade e projetos personalizados para residências, escritórios e espaços comerciais. 
+      Eficiência energética e design excepcional em cada solução.
+    </p>
+    <div class="hero-buttons">
+      <button class="btn-primary">
+        Experimentar Visualizador 3D
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </button>
+      <button class="btn-secondary" routerLink="/catalogo">Ver Catálogo</button>
+    </div>
+  </div>
+</section>
+
+<!-- Estatísticas -->
+<section class="estatisticas">
+  <div class="estatisticas-grid">
+    <div class="estatistica-item" *ngFor="let item of estadisticas">
+      <div class="estatistica-numero">{{ item.numero }}</div>
+      <div class="estatistica-descricao">{{ item.descricao }}</div>
+    </div>
+  </div>
+</section>
+
+<!-- Produtos em Destaque -->
+<section class="produtos" id="produtos">
+  <div class="produtos-container">
+    <h2 class="produtos-title">Produtos em Destaque</h2>
+    <p class="produtos-subtitle">
+      Descubra nossa seleção de produtos de iluminação de alta qualidade, perfeitos para qualquer ambiente e necessidade.
+    </p>
+    <div class="produtos-grid">
+      <div class="produto-card" *ngFor="let produto of produtos; let i = index">
+        <div class="produto-imagem">
+          <img [src]="produto.imagem" [alt]="produto.nome">
+          <div class="produto-badges">
+            <span class="badge badge-black" *ngFor="let badge of produto.badges">
+              {{ badge }}
+            </span>
+          </div>
+        </div>
+        <div class="produto-tag">{{ produto.categoria }}</div>
+        <h3 class="produto-nome">{{ produto.nome }}</h3>
+        <div class="produto-preco">
+          <span class="preco-atual">{{ produto.precoAtual }}</span>
+          <span class="preco-anterior" *ngIf="produto.precoAnterior">{{ produto.precoAnterior }}</span>
+        </div>
+        <button class="btn-add-cart" type="button" (click)="addFeaturedToCart(produto, i)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="9" cy="21" r="1"/>
+            <circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          Adicionar ao Carrinho
+        </button>
+      </div>
+    </div>
+    <button class="btn-view-all" routerLink="/catalogo">
+      Ver Todos os Produtos
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </button>
+  </div>
+</section>
+
+<!-- Contato -->
+<section class="contato" id="contato">
+  <div class="contato-container">
+    <h2 class="contato-title">Entre em Contato</h2>
+    <p class="contato-subtitle">
+      Pronto para transformar seu espaço? Nossa equipe está aqui para ajudar você a encontrar a solução de iluminação perfeita.
+    </p>
+    <div class="contato-content">
+      <div class="contato-info">
+        <div class="info-card">
+          <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          <h3>Telefone</h3>
+          <p>(11) 3456-7890</p>
+          <p>(11) 99876-5432</p>
+        </div>
+        <div class="info-card">
+          <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <h3>E-mail</h3>
+          <p>contato&#64;raitocorp.com.br</p>
+          <p>vendas&#64;raitocorp.com.br</p>
+        </div>
+        <div class="info-card">
+          <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <h3>Endereço</h3>
+          <p>Rua das Luzes, 123</p>
+          <p>Vila Iluminada</p>
+          <p>São Paulo - SP</p>
+          <p>CEP: 01234-567</p>
+        </div>
+      </div>
+      <div class="contato-form-wrapper">
+        <div class="form-card">
+          <h3>Solicite seu Orçamento</h3>
+          <p class="form-description">Preencha o formulário abaixo e nossa equipe entrará em contato em até 24 horas.</p>
+          <form (ngSubmit)="onSubmit()" #contactFormRef="ngForm">
+            <div class="form-group">
+              <label for="nome">Nome Completo *</label>
+              <input type="text" id="nome" name="nome" [(ngModel)]="contactForm.nome" required placeholder="Seu nome completo">
+            </div>
+            <div class="form-group">
+              <label for="email">E-mail *</label>
+              <input type="email" id="email" name="email" [(ngModel)]="contactForm.email" required placeholder="seu@email.com">
+            </div>
+            <div class="form-group">
+              <label for="telefone">Telefone</label>
+              <input type="tel" id="telefone" name="telefone" [(ngModel)]="contactForm.telefone" placeholder="(11) 99999-9999">
+            </div>
+            <div class="form-group">
+              <label for="tipoServico">Tipo de Serviço *</label>
+              <select id="tipoServico" name="tipoServico" [(ngModel)]="contactForm.tipoServico" required>
+                <option value="">Selecione o serviço</option>
+                <option value="residencial">Projeto Residencial</option>
+                <option value="comercial">Projeto Comercial</option>
+                <option value="consultoria">Consultoria</option>
+                <option value="instalacao">Instalação</option>
+                <option value="manutencao">Manutenção</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="mensagem">Mensagem</label>
+              <textarea id="mensagem" name="mensagem" [(ngModel)]="contactForm.mensagem" rows="4" placeholder="Descreva seu projeto ou necessidade..."></textarea>
+            </div>
+            <div class="form-checkbox">
+              <input type="checkbox" id="receberNovidades" name="receberNovidades" [(ngModel)]="contactForm.receberNovidades">
+              <label for="receberNovidades">Quero receber novidades e ofertas especiais por e-mail</label>
+            </div>
+            <button type="submit" class="btn-submit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+              Enviar Mensagem
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-content">
+    <div class="footer-section">
+      <div class="footer-logo">
+        <div class="logo-circle-white"></div>
+        <div>
+          <h3>Raitõ Corp</h3>
+          <p>Soluções de iluminação</p>
+        </div>
+      </div>
+      <p class="footer-description">
+        Transformando ambientes há mais de 15 anos com soluções de iluminação inovadoras e sustentáveis.
+      </p>
+      <div class="social-icons">
+        <a href="#" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-3z"/>
+          </svg>
+        </a>
+        <a href="#" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          </svg>
+        </a>
+        <a href="#" aria-label="LinkedIn">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+            <rect x="2" y="9" width="4" height="12"/>
+            <circle cx="4" cy="4" r="2"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+    <div class="footer-section">
+      <h4>Links Rápidos</h4>
+      <ul>
+        <li><a href="#inicio">Início</a></li>
+        <li><a routerLink="/catalogo">Produtos</a></li>
+        <li><a href="#visualizador">Soluções</a></li>
+        <li><a href="#contato">Contato</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Sobre Nós</a></li>
+      </ul>
+    </div>
+    <div class="footer-section">
+      <h4>Serviços</h4>
+      <ul>
+        <li><a href="#">Projeto Residencial</a></li>
+        <li><a href="#">Projeto Comercial</a></li>
+        <li><a href="#">Consultoria</a></li>
+        <li><a href="#">Instalação</a></li>
+        <li><a href="#">Manutenção</a></li>
+        <li><a href="#">Automação</a></li>
+      </ul>
+    </div>
+    <div class="footer-section">
+      <h4>Contato</h4>
+      <ul class="footer-contact">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          (11) 3456-7890
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          contato&#64;raitocorp.com.br
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Rua das Luzes, 123<br>São Paulo - SP
+        </li>
+      </ul>
+      <div class="newsletter">
+        <h4>Newsletter</h4>
+        <p>Receba novidades e ofertas especiais</p>
+        <div class="newsletter-input">
+          <input type="email" placeholder="Seu e-mail">
+          <button>Assinar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2024 Raitõ Corp. Todos os direitos reservados.</p>
+    <div class="footer-links">
+      <a href="#">Política de Privacidade</a>
+      <a href="#">Termos de Uso</a>
+      <a href="#">Cookies</a>
+    </div>
+  </div>
+</footer>

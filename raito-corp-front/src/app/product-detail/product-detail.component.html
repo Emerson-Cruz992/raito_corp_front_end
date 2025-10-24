@@ -1,0 +1,49 @@
+<div class="modal-backdrop" *ngIf="open" (click)="onBackdropClick($event)">
+  <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <h3 class="title">{{ product?.name }}</h3>
+      <button class="close-btn" (click)="closed.emit()" aria-label="Fechar">
+        ✕
+      </button>
+    </header>
+
+    <section class="modal-content">
+      <div class="media">
+        <img [src]="product?.image" [alt]="product?.name">
+      </div>
+      <div class="details">
+        <div class="price-block" *ngIf="product?.price as p">
+          <div class="price">{{ p | currency:'BRL' }}</div>
+          <div class="original" *ngIf="product?.originalPrice as op">{{ op | currency:'BRL' }}</div>
+        </div>
+
+        <div class="meta">
+          <span class="badge" *ngFor="let b of product?.badges">{{ b }}</span>
+          <span class="category">{{ product?.category }}</span>
+        </div>
+
+        <p class="description" *ngIf="product?.description">{{ product?.description }}</p>
+
+        <div class="feature-grid">
+          <div class="feature">
+            <strong>Garantia</strong>
+            <span>2 anos</span>
+          </div>
+          <div class="feature">
+            <strong>Eficiência</strong>
+            <span>A++</span>
+          </div>
+          <div class="feature">
+            <strong>Avaliação</strong>
+            <span>4.8/5.0</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="modal-footer">
+      <button class="ghost">Testar no Visualizador 3D</button>
+      <button class="primary">Adicionar ao Carrinho</button>
+    </footer>
+  </div>
+</div>
