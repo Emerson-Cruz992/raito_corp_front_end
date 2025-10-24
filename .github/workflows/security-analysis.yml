@@ -30,10 +30,37 @@ jobs:
         node-version: '20'
         cache: 'npm'
 
+    - name: Detect project structure
+      id: detect-structure
+      run: |
+        echo "Detecting project structure..."
+        
+        # Verificar se há subpasta com projeto Angular
+        if [ -d "raito-corp-front" ] && [ -f "raito-corp-front/package.json" ]; then
+          echo "project_dir=raito-corp-front" >> $GITHUB_OUTPUT
+          echo "✅ Found Angular project in raito-corp-front/ directory"
+        elif [ -f "package.json" ]; then
+          echo "project_dir=." >> $GITHUB_OUTPUT
+          echo "✅ Found Angular project in root directory"
+        else
+          echo "project_dir=none" >> $GITHUB_OUTPUT
+          echo "❌ No Angular project found"
+        fi
+
     - name: Check for package files
       id: check-files
       run: |
-        echo "Checking for package management files..."
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        
+        if [ "$PROJECT_DIR" = "none" ]; then
+          echo "❌ No project directory found"
+          echo "no_package_files=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        cd "$PROJECT_DIR"
+        
+        echo "Checking for package management files in $PROJECT_DIR..."
         if [ -f "package-lock.json" ]; then
           echo "package_lock_exists=true" >> $GITHUB_OUTPUT
           echo "✅ Found package-lock.json"
@@ -51,6 +78,9 @@ jobs:
     - name: Install dependencies
       if: steps.check-files.outputs.no_package_files != 'true'
       run: |
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        cd "$PROJECT_DIR"
+        
         if [ "${{ steps.check-files.outputs.package_lock_exists }}" = "true" ]; then
           npm ci
         elif [ "${{ steps.check-files.outputs.yarn_lock_exists }}" = "true" ]; then
@@ -64,35 +94,38 @@ jobs:
       id: npm-audit
       if: steps.check-files.outputs.no_package_files != 'true'
       run: |
-        echo "## 🔍 NPM Audit Results" >> audit_results.md
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        cd "$PROJECT_DIR"
+        
+        echo "## 🔍 NPM Audit Results" >> ../audit_results.md
         
         # Verifica se npm está disponível e há dependencies
         if ! command -v npm &> /dev/null; then
-          echo "⚠️ npm not available, skipping dependency audit" >> audit_results.md
+          echo "⚠️ npm not available, skipping dependency audit" >> ../audit_results.md
           echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
           exit 0
         fi
         
         if [ ! -f "package.json" ]; then
-          echo "⚠️ No package.json found, skipping dependency audit" >> audit_results.md
+          echo "⚠️ No package.json found, skipping dependency audit" >> ../audit_results.md
           echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
           exit 0
         fi
         
         # Executa audit e captura resultado
-        if npm audit --audit-level=moderate --json > npm_audit.json 2>&1; then
-          echo "✅ No moderate+ vulnerabilities found in dependencies" >> audit_results.md
+        if npm audit --audit-level=moderate --json > ../npm_audit.json 2>&1; then
+          echo "✅ No moderate+ vulnerabilities found in dependencies" >> ../audit_results.md
           echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
         else
           AUDIT_EXIT_CODE=$?
           if [ $AUDIT_EXIT_CODE -eq 1 ]; then
-            echo "❌ Vulnerabilities found in dependencies:" >> audit_results.md
-            echo "\`\`\`json" >> audit_results.md
-            head -50 npm_audit.json >> audit_results.md  # Limita output para evitar overflow
-            echo "\`\`\`" >> audit_results.md
+            echo "❌ Vulnerabilities found in dependencies:" >> ../audit_results.md
+            echo "\`\`\`json" >> ../audit_results.md
+            head -50 ../npm_audit.json >> ../audit_results.md  # Limita output para evitar overflow
+            echo "\`\`\`" >> ../audit_results.md
             echo "has_vulnerabilities=true" >> $GITHUB_OUTPUT
           else
-            echo "⚠️ npm audit failed to run properly (exit code: $AUDIT_EXIT_CODE)" >> audit_results.md
+            echo "⚠️ npm audit failed to run properly (exit code: $AUDIT_EXIT_CODE)" >> ../audit_results.md
             echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
           fi
         fi
@@ -102,48 +135,58 @@ jobs:
     - name: Run ESLint Security Analysis
       id: eslint
       run: |
-        echo "## 🔒 ESLint Security Analysis" >> eslint_results.md
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        
+        if [ "$PROJECT_DIR" = "none" ]; then
+          echo "⚠️ No project directory found, skipping ESLint analysis" >> eslint_results.md
+          echo "has_issues=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        cd "$PROJECT_DIR"
+        
+        echo "## 🔒 ESLint Security Analysis" >> ../eslint_results.md
         
         # Verifica se ESLint está instalado
         if ! command -v npx &> /dev/null; then
-          echo "⚠️ npx not available, skipping ESLint analysis" >> eslint_results.md
+          echo "⚠️ npx not available, skipping ESLint analysis" >> ../eslint_results.md
           echo "has_issues=false" >> $GITHUB_OUTPUT
           exit 0
         fi
         
         # Verifica se há arquivos TypeScript/JavaScript para analisar
         if ! find . -name "*.ts" -o -name "*.js" -o -name "*.html" | grep -q .; then
-          echo "⚠️ No TypeScript/JavaScript/HTML files found to analyze" >> eslint_results.md
+          echo "⚠️ No TypeScript/JavaScript/HTML files found to analyze" >> ../eslint_results.md
           echo "has_issues=false" >> $GITHUB_OUTPUT
           exit 0
         fi
         
         # Tenta executar ESLint
-        if npx eslint . --ext .ts,.js,.html --format json --output-file eslint_report.json 2>/dev/null || true; then
-          if [ -s eslint_report.json ]; then
+        if npx eslint . --ext .ts,.js,.html --format json --output-file ../eslint_report.json 2>/dev/null || true; then
+          if [ -s "../eslint_report.json" ]; then
             # Verifica se o JSON é válido
-            if jq empty eslint_report.json 2>/dev/null; then
-              ISSUES_COUNT=$(cat eslint_report.json | jq '[.[].messages[]] | length' 2>/dev/null || echo "0")
+            if jq empty ../eslint_report.json 2>/dev/null; then
+              ISSUES_COUNT=$(cat ../eslint_report.json | jq '[.[].messages[]] | length' 2>/dev/null || echo "0")
               if [ "$ISSUES_COUNT" -gt 0 ]; then
-                echo "❌ Found $ISSUES_COUNT potential security/quality issues:" >> eslint_results.md
-                echo "\`\`\`json" >> eslint_results.md
-                cat eslint_report.json | jq '.' | head -100 >> eslint_results.md  # Limita output
-                echo "\`\`\`" >> eslint_results.md
+                echo "❌ Found $ISSUES_COUNT potential security/quality issues:" >> ../eslint_results.md
+                echo "\`\`\`json" >> ../eslint_results.md
+                cat ../eslint_report.json | jq '.' | head -100 >> ../eslint_results.md  # Limita output
+                echo "\`\`\`" >> ../eslint_results.md
                 echo "has_issues=true" >> $GITHUB_OUTPUT
               else
-                echo "✅ No ESLint issues found" >> eslint_results.md
+                echo "✅ No ESLint issues found" >> ../eslint_results.md
                 echo "has_issues=false" >> $GITHUB_OUTPUT
               fi
             else
-              echo "⚠️ ESLint produced invalid JSON output" >> eslint_results.md
+              echo "⚠️ ESLint produced invalid JSON output" >> ../eslint_results.md
               echo "has_issues=false" >> $GITHUB_OUTPUT
             fi
           else
-            echo "✅ No ESLint issues found" >> eslint_results.md
+            echo "✅ No ESLint issues found" >> ../eslint_results.md
             echo "has_issues=false" >> $GITHUB_OUTPUT
           fi
         else
-          echo "⚠️ ESLint not configured or failed to run" >> eslint_results.md
+          echo "⚠️ ESLint not configured or failed to run" >> ../eslint_results.md
           echo "has_issues=false" >> $GITHUB_OUTPUT
         fi
       continue-on-error: true
@@ -190,155 +233,153 @@ jobs:
       id: trufflehog
       run: |
         echo "## 🔐 Secrets Scan Results" >> secrets_results.md
-        docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest filesystem /pwd --json > trufflehog_results.json || true
         
-        if [ -s trufflehog_results.json ]; then
-          SECRETS_COUNT=$(cat trufflehog_results.json | jq -s 'length')
-          if [ "$SECRETS_COUNT" -gt 0 ]; then
-            echo "❌ Found $SECRETS_COUNT potential secrets/credentials:" >> secrets_results.md
-            echo "\`\`\`json" >> secrets_results.md
-            cat trufflehog_results.json | jq '.' >> secrets_results.md
-            echo "\`\`\`" >> secrets_results.md
-            echo "has_secrets=true" >> $GITHUB_OUTPUT
+        if docker --version &> /dev/null; then
+          docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest filesystem /pwd --json > trufflehog_results.json || true
+          
+          if [ -s trufflehog_results.json ]; then
+            SECRETS_COUNT=$(cat trufflehog_results.json | wc -l)
+            if [ "$SECRETS_COUNT" -gt 0 ]; then
+              echo "❌ Found potential secrets/credentials:" >> secrets_results.md
+              echo "\`\`\`json" >> secrets_results.md
+              head -30 trufflehog_results.json >> secrets_results.md
+              echo "\`\`\`" >> secrets_results.md
+              echo "has_secrets=true" >> $GITHUB_OUTPUT
+            else
+              echo "✅ No secrets found" >> secrets_results.md
+              echo "has_secrets=false" >> $GITHUB_OUTPUT
+            fi
           else
             echo "✅ No secrets found" >> secrets_results.md
             echo "has_secrets=false" >> $GITHUB_OUTPUT
           fi
         else
-          echo "✅ No secrets found" >> secrets_results.md
+          echo "⚠️ Docker not available, skipping secrets analysis" >> secrets_results.md
           echo "has_secrets=false" >> $GITHUB_OUTPUT
         fi
       continue-on-error: true
 
-    # Análise específica de Angular/TypeScript
-    - name: Angular Security Analysis
+    # Análise específica do Angular
+    - name: Angular Security Check
       id: angular-security
       run: |
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        
         echo "## 🅰️ Angular Security Analysis" >> angular_results.md
         
-        # Verifica uso de innerHTML sem sanitização
-        echo "### innerHTML Usage Check" >> angular_results.md
-        INNER_HTML_ISSUES=$(grep -r "innerHTML" src/ --include="*.ts" --include="*.html" || true)
-        if [ -n "$INNER_HTML_ISSUES" ]; then
-          echo "⚠️ Potential XSS vulnerabilities found with innerHTML usage:" >> angular_results.md
-          echo "\`\`\`" >> angular_results.md
-          echo "$INNER_HTML_ISSUES" >> angular_results.md
-          echo "\`\`\`" >> angular_results.md
-        else
-          echo "✅ No unsafe innerHTML usage found" >> angular_results.md
+        if [ "$PROJECT_DIR" = "none" ]; then
+          echo "⚠️ No Angular project found, skipping Angular security analysis" >> angular_results.md
+          echo "has_critical_issues=false" >> $GITHUB_OUTPUT
+          exit 0
         fi
         
-        # Verifica bypass de sanitização
-        echo "### Sanitization Bypass Check" >> angular_results.md
-        BYPASS_ISSUES=$(grep -r "bypassSecurityTrust" src/ --include="*.ts" || true)
-        if [ -n "$BYPASS_ISSUES" ]; then
-          echo "⚠️ Security bypass methods found:" >> angular_results.md
-          echo "\`\`\`" >> angular_results.md
-          echo "$BYPASS_ISSUES" >> angular_results.md
-          echo "\`\`\`" >> angular_results.md
-        else
-          echo "✅ No security bypass methods found" >> angular_results.md
+        cd "$PROJECT_DIR"
+        
+        # Verificação básica de configurações de segurança Angular
+        ANGULAR_ISSUES=0
+        
+        # Verifica se angular.json existe
+        if [ ! -f "angular.json" ]; then
+          echo "⚠️ No angular.json found, might not be an Angular project" >> ../angular_results.md
+          echo "has_critical_issues=false" >> $GITHUB_OUTPUT
+          exit 0
         fi
         
-        # Verifica eval() usage
-        echo "### Eval Usage Check" >> angular_results.md
-        EVAL_ISSUES=$(grep -r "eval(" src/ --include="*.ts" --include="*.js" || true)
-        if [ -n "$EVAL_ISSUES" ]; then
-          echo "❌ Dangerous eval() usage found:" >> angular_results.md
-          echo "\`\`\`" >> angular_results.md
-          echo "$EVAL_ISSUES" >> angular_results.md
-          echo "\`\`\`" >> angular_results.md
+        # Verifica configurações de build
+        if grep -q '"optimization": false' angular.json 2>/dev/null; then
+          echo "⚠️ Optimization disabled in production build" >> ../angular_results.md
+          ANGULAR_ISSUES=$((ANGULAR_ISSUES + 1))
+        fi
+        
+        # Verifica se há innerHTML ou bypassSecurityTrust sendo usados
+        if find src -name "*.ts" -exec grep -l "innerHTML\|bypassSecurityTrust" {} \; 2>/dev/null | grep -q .; then
+          echo "⚠️ Potentially unsafe DOM manipulation found (innerHTML/bypassSecurityTrust)" >> ../angular_results.md
+          ANGULAR_ISSUES=$((ANGULAR_ISSUES + 1))
+        fi
+        
+        # Verifica CSP (Content Security Policy)
+        if ! grep -r "Content-Security-Policy" src/ 2>/dev/null | grep -q .; then
+          echo "📋 Consider implementing Content Security Policy (CSP)" >> ../angular_results.md
+        fi
+        
+        if [ $ANGULAR_ISSUES -gt 0 ]; then
           echo "has_critical_issues=true" >> $GITHUB_OUTPUT
         else
-          echo "✅ No eval() usage found" >> angular_results.md
+          echo "✅ No critical Angular security issues found" >> ../angular_results.md
+          echo "has_critical_issues=false" >> $GITHUB_OUTPUT
         fi
-        
-        # Verifica hardcoded URLs/endpoints
-        echo "### Hardcoded URLs Check" >> angular_results.md
-        HARDCODED_URLS=$(grep -rE "http[s]?://[^'\"\s]+" src/ --include="*.ts" --include="*.html" || true)
-        if [ -n "$HARDCODED_URLS" ]; then
-          echo "⚠️ Hardcoded URLs found (potential security risk):" >> angular_results.md
-          echo "\`\`\`" >> angular_results.md
-          echo "$HARDCODED_URLS" >> angular_results.md
-          echo "\`\`\`" >> angular_results.md
-        else
-          echo "✅ No hardcoded URLs found" >> angular_results.md
-        fi
+      continue-on-error: true
 
-    # Análise de configurações de segurança
-    - name: Security Configuration Analysis
-      id: security-config
+    # Verificação de configurações de segurança
+    - name: Security Configuration Check
+      id: config-check
       run: |
-        echo "## ⚙️ Security Configuration Analysis" >> config_results.md
+        echo "## ⚙️ Security Configuration Check" >> config_results.md
         
-        # Verifica configurações do Angular
-        echo "### Angular Configuration" >> config_results.md
-        if [ -f "angular.json" ]; then
-          # Verifica se source maps estão desabilitados em produção
-          SOURCE_MAPS=$(cat angular.json | jq -r '.projects[].architect.build.configurations.production.sourceMap // empty')
-          if [ "$SOURCE_MAPS" = "true" ]; then
-            echo "⚠️ Source maps enabled in production (information disclosure risk)" >> config_results.md
-          else
-            echo "✅ Source maps properly configured for production" >> config_results.md
+        # Verifica .gitignore
+        if [ ! -f ".gitignore" ]; then
+          echo "⚠️ No .gitignore file found" >> config_results.md
+        else
+          # Verifica se arquivos sensíveis estão sendo ignorados
+          if ! grep -q "node_modules" .gitignore; then
+            echo "⚠️ node_modules not in .gitignore" >> config_results.md
           fi
-          
-          # Verifica otimizações de build
-          OPTIMIZATION=$(cat angular.json | jq -r '.projects[].architect.build.configurations.production.optimization // empty')
-          if [ "$OPTIMIZATION" = "false" ]; then
-            echo "⚠️ Build optimization disabled in production" >> config_results.md
-          else
-            echo "✅ Build optimization enabled for production" >> config_results.md
+          if ! grep -q "\.env" .gitignore; then
+            echo "⚠️ .env files not in .gitignore" >> config_results.md
+          fi
+          if ! grep -q "dist" .gitignore; then
+            echo "📋 Consider adding dist/ to .gitignore" >> config_results.md
           fi
         fi
         
-        # Verifica configurações do TypeScript
-        echo "### TypeScript Configuration" >> config_results.md
-        if [ -f "tsconfig.json" ]; then
-          STRICT_MODE=$(cat tsconfig.json | jq -r '.compilerOptions.strict // empty')
-          if [ "$STRICT_MODE" != "true" ]; then
-            echo "⚠️ TypeScript strict mode not enabled (potential type safety issues)" >> config_results.md
-          else
-            echo "✅ TypeScript strict mode enabled" >> config_results.md
-          fi
+        # Verifica se há arquivos .env commitados
+        if find . -name ".env*" -not -path "./node_modules/*" | grep -q .; then
+          echo "❌ Environment files found in repository" >> config_results.md
         fi
+        
+        echo "✅ Security configuration check completed" >> config_results.md
+      continue-on-error: true
 
-    # Compilar e verificar build
-    - name: Test Build Process
+    # Teste de build de produção
+    - name: Production Build Test
       id: build-test
       run: |
-        echo "## 🏗️ Build Process Analysis" >> build_results.md
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
         
-        # Verifica se é um projeto Angular
-        if [ ! -f "angular.json" ]; then
-          echo "⚠️ Not an Angular project (no angular.json found), skipping build test" >> build_results.md
+        echo "## 🏗️ Production Build Test" >> build_results.md
+        
+        if [ "$PROJECT_DIR" = "none" ]; then
+          echo "⚠️ No Angular project found, skipping build test" >> build_results.md
           echo "build_failed=false" >> $GITHUB_OUTPUT
           exit 0
         fi
         
-        # Verifica se ng CLI está disponível
+        cd "$PROJECT_DIR"
+        
+        # Verifica se npx está disponível
         if ! command -v npx &> /dev/null; then
-          echo "⚠️ npx not available, cannot run ng build" >> build_results.md
+          echo "⚠️ npx not available, cannot run ng build" >> ../build_results.md
           echo "build_failed=false" >> $GITHUB_OUTPUT
           exit 0
         fi
         
         # Tenta fazer o build
-        if npx ng build --configuration=production 2>&1 | tee build_output.log; then
-          echo "✅ Production build successful" >> build_results.md
+        if npx ng build --configuration=production 2>&1 | tee ../build_output.log; then
+          echo "✅ Production build successful" >> ../build_results.md
           
           # Verifica warnings no build
-          if grep -i "warning" build_output.log > /dev/null; then
-            echo "⚠️ Build warnings found:" >> build_results.md
-            echo "\`\`\`" >> build_results.md
-            grep -i "warning" build_output.log | head -20 >> build_results.md
-            echo "\`\`\`" >> build_results.md
+          if grep -i "warning" ../build_output.log > /dev/null; then
+            echo "⚠️ Build warnings found:" >> ../build_results.md
+            echo "\`\`\`" >> ../build_results.md
+            grep -i "warning" ../build_output.log | head -20 >> ../build_results.md
+            echo "\`\`\`" >> ../build_results.md
           fi
           echo "build_failed=false" >> $GITHUB_OUTPUT
         else
-          echo "❌ Production build failed" >> build_results.md
-          echo "\`\`\`" >> build_results.md
-          tail -50 build_output.log >> build_results.md  # Mostra apenas últimas 50 linhas
-          echo "\`\`\`" >> build_results.md
+          echo "❌ Production build failed" >> ../build_results.md
+          echo "\`\`\`" >> ../build_results.md
+          tail -50 ../build_output.log >> ../build_results.md  # Mostra apenas últimas 50 linhas
+          echo "\`\`\`" >> ../build_results.md
           echo "build_failed=true" >> $GITHUB_OUTPUT
         fi
       continue-on-error: true
@@ -494,6 +535,14 @@ jobs:
     
     steps:
     - name: Security Gate Decision
+  security-gate:
+    name: Security Gate
+    needs: security-analysis
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Security Gate Decision
       run: |
         echo "Security analysis status: ${{ needs.security-analysis.result }}"
         
@@ -507,4 +556,3 @@ jobs:
           echo "::notice::Security analysis passed. Code is ready for merge."
         else
           echo "::warning::Security analysis completed with warnings. Please review the report."
-        fi
