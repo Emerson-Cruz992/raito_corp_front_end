@@ -527,32 +527,4 @@ jobs:
         echo "::warning::High priority issues found. Review recommended before merging."
 
   # Job adicional para verificar o status do workflow
-  security-gate:
-    name: Security Gate
-    needs: security-analysis
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-    - name: Security Gate Decision
-  security-gate:
-    name: Security Gate
-    needs: security-analysis
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-    - name: Security Gate Decision
-      run: |
-        echo "Security analysis status: ${{ needs.security-analysis.result }}"
-        
-        if [ "${{ needs.security-analysis.result }}" = "failure" ]; then
-          echo "::error::Security analysis failed due to critical issues."
-          echo "::notice::For initial setup, this is informational. Review the security report."
-          echo "To enable strict blocking, uncomment the exit 1 line in the workflow."
-          # Para permitir setup inicial, comentamos o exit:
-          # exit 1
-        elif [ "${{ needs.security-analysis.result }}" = "success" ]; then
-          echo "::notice::Security analysis passed. Code is ready for merge."
-        else
-          echo "::warning::Security analysis completed with warnings. Please review the report."
+
