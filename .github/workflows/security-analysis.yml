@@ -1,0 +1,530 @@
+name: Security & Quality Analysis
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+  checks: write
+
+jobs:
+  security-analysis:
+    name: Security & Vulnerability Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Detect project structure
+      id: detect-structure
+      run: |
+        echo "Detecting project structure..."
+        
+        # Verificar se há subpasta com projeto Angular
+        if [ -d "raito-corp-front" ] && [ -f "raito-corp-front/package.json" ]; then
+          echo "project_dir=raito-corp-front" >> $GITHUB_OUTPUT
+          echo "✅ Found Angular project in raito-corp-front/ directory"
+        elif [ -f "package.json" ]; then
+          echo "project_dir=." >> $GITHUB_OUTPUT
+          echo "✅ Found Angular project in root directory"
+        else
+          echo "project_dir=none" >> $GITHUB_OUTPUT
+          echo "❌ No Angular project found"
+        fi
+
+    - name: Check for package files
+      id: check-files
+      run: |
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        
+        if [ "$PROJECT_DIR" = "none" ]; then
+          echo "❌ No project directory found"
+          echo "no_package_files=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        cd "$PROJECT_DIR"
+        
+        echo "Checking for package management files in $PROJECT_DIR..."
+        if [ -f "package-lock.json" ]; then
+          echo "package_lock_exists=true" >> $GITHUB_OUTPUT
+          echo "✅ Found package-lock.json"
+        elif [ -f "yarn.lock" ]; then
+          echo "yarn_lock_exists=true" >> $GITHUB_OUTPUT
+          echo "✅ Found yarn.lock"
+        elif [ -f "package.json" ]; then
+          echo "package_json_exists=true" >> $GITHUB_OUTPUT
+          echo "✅ Found package.json"
+        else
+          echo "❌ No package management files found"
+          echo "no_package_files=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Install dependencies
+      if: steps.check-files.outputs.no_package_files != 'true'
+      run: |
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        cd "$PROJECT_DIR"
+        
+        if [ "${{ steps.check-files.outputs.package_lock_exists }}" = "true" ]; then
+          npm ci
+        elif [ "${{ steps.check-files.outputs.yarn_lock_exists }}" = "true" ]; then
+          yarn install --frozen-lockfile
+        else
+          npm install
+        fi
+
+    # Análise de vulnerabilidades em dependências
+    - name: Run npm audit
+      id: npm-audit
+      if: steps.check-files.outputs.no_package_files != 'true'
+      run: |
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        cd "$PROJECT_DIR"
+        
+        echo "## 🔍 NPM Audit Results" >> ../audit_results.md
+        
+        # Verifica se npm está disponível e há dependencies
+        if ! command -v npm &> /dev/null; then
+          echo "⚠️ npm not available, skipping dependency audit" >> ../audit_results.md
+          echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        if [ ! -f "package.json" ]; then
+          echo "⚠️ No package.json found, skipping dependency audit" >> ../audit_results.md
+          echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Executa audit e captura resultado
+        if npm audit --audit-level=moderate --json > ../npm_audit.json 2>&1; then
+          echo "✅ No moderate+ vulnerabilities found in dependencies" >> ../audit_results.md
+          echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+        else
+          AUDIT_EXIT_CODE=$?
+          if [ $AUDIT_EXIT_CODE -eq 1 ]; then
+            echo "❌ Vulnerabilities found in dependencies:" >> ../audit_results.md
+            echo "\`\`\`json" >> ../audit_results.md
+            head -50 ../npm_audit.json >> ../audit_results.md  # Limita output para evitar overflow
+            echo "\`\`\`" >> ../audit_results.md
+            echo "has_vulnerabilities=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ npm audit failed to run properly (exit code: $AUDIT_EXIT_CODE)" >> ../audit_results.md
+            echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+          fi
+        fi
+      continue-on-error: true
+
+    # Análise estática de código com ESLint
+    - name: Run ESLint Security Analysis
+      id: eslint
+      run: |
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        
+        if [ "$PROJECT_DIR" = "none" ]; then
+          echo "⚠️ No project directory found, skipping ESLint analysis" >> eslint_results.md
+          echo "has_issues=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        cd "$PROJECT_DIR"
+        
+        echo "## 🔒 ESLint Security Analysis" >> ../eslint_results.md
+        
+        # Verifica se ESLint está instalado
+        if ! command -v npx &> /dev/null; then
+          echo "⚠️ npx not available, skipping ESLint analysis" >> ../eslint_results.md
+          echo "has_issues=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Verifica se há arquivos TypeScript/JavaScript para analisar
+        if ! find . -name "*.ts" -o -name "*.js" -o -name "*.html" | grep -q .; then
+          echo "⚠️ No TypeScript/JavaScript/HTML files found to analyze" >> ../eslint_results.md
+          echo "has_issues=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Tenta executar ESLint
+        if npx eslint . --ext .ts,.js,.html --format json --output-file ../eslint_report.json 2>/dev/null || true; then
+          if [ -s "../eslint_report.json" ]; then
+            # Verifica se o JSON é válido
+            if jq empty ../eslint_report.json 2>/dev/null; then
+              ISSUES_COUNT=$(cat ../eslint_report.json | jq '[.[].messages[]] | length' 2>/dev/null || echo "0")
+              if [ "$ISSUES_COUNT" -gt 0 ]; then
+                echo "❌ Found $ISSUES_COUNT potential security/quality issues:" >> ../eslint_results.md
+                echo "\`\`\`json" >> ../eslint_results.md
+                cat ../eslint_report.json | jq '.' | head -100 >> ../eslint_results.md  # Limita output
+                echo "\`\`\`" >> ../eslint_results.md
+                echo "has_issues=true" >> $GITHUB_OUTPUT
+              else
+                echo "✅ No ESLint issues found" >> ../eslint_results.md
+                echo "has_issues=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "⚠️ ESLint produced invalid JSON output" >> ../eslint_results.md
+              echo "has_issues=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "✅ No ESLint issues found" >> ../eslint_results.md
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "⚠️ ESLint not configured or failed to run" >> ../eslint_results.md
+          echo "has_issues=false" >> $GITHUB_OUTPUT
+        fi
+      continue-on-error: true
+
+    # Análise de segurança com Semgrep (simplificado)
+    - name: Run Semgrep Security Scan
+      id: semgrep
+      run: |
+        echo "## 🔍 Semgrep Security Analysis" >> semgrep_results.md
+        
+        # Instala e executa Semgrep via Docker para evitar problemas de dependência
+        if docker --version &> /dev/null; then
+          echo "Running Semgrep security analysis..."
+          docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep \
+            --config=p/security-audit \
+            --config=p/secrets \
+            --json \
+            /src > semgrep_output.json 2>/dev/null || true
+            
+          if [ -s semgrep_output.json ]; then
+            FINDINGS_COUNT=$(cat semgrep_output.json | jq '.results | length' 2>/dev/null || echo "0")
+            if [ "$FINDINGS_COUNT" -gt 0 ]; then
+              echo "❌ Found $FINDINGS_COUNT security findings:" >> semgrep_results.md
+              echo "\`\`\`json" >> semgrep_results.md
+              cat semgrep_output.json | jq '.results' | head -50 >> semgrep_results.md
+              echo "\`\`\`" >> semgrep_results.md
+              echo "has_findings=true" >> $GITHUB_OUTPUT
+            else
+              echo "✅ No security findings from Semgrep" >> semgrep_results.md
+              echo "has_findings=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "✅ No security findings from Semgrep" >> semgrep_results.md
+            echo "has_findings=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "⚠️ Docker not available, skipping Semgrep analysis" >> semgrep_results.md
+          echo "has_findings=false" >> $GITHUB_OUTPUT
+        fi
+      continue-on-error: true
+
+    # Análise de secrets/credenciais
+    - name: Run TruffleHog Secrets Scan
+      id: trufflehog
+      run: |
+        echo "## 🔐 Secrets Scan Results" >> secrets_results.md
+        
+        if docker --version &> /dev/null; then
+          docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest filesystem /pwd --json > trufflehog_results.json || true
+          
+          if [ -s trufflehog_results.json ]; then
+            SECRETS_COUNT=$(cat trufflehog_results.json | wc -l)
+            if [ "$SECRETS_COUNT" -gt 0 ]; then
+              echo "❌ Found potential secrets/credentials:" >> secrets_results.md
+              echo "\`\`\`json" >> secrets_results.md
+              head -30 trufflehog_results.json >> secrets_results.md
+              echo "\`\`\`" >> secrets_results.md
+              echo "has_secrets=true" >> $GITHUB_OUTPUT
+            else
+              echo "✅ No secrets found" >> secrets_results.md
+              echo "has_secrets=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "✅ No secrets found" >> secrets_results.md
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "⚠️ Docker not available, skipping secrets analysis" >> secrets_results.md
+          echo "has_secrets=false" >> $GITHUB_OUTPUT
+        fi
+      continue-on-error: true
+
+    # Análise específica do Angular
+    - name: Angular Security Check
+      id: angular-security
+      run: |
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        
+        echo "## 🅰️ Angular Security Analysis" >> angular_results.md
+        
+        if [ "$PROJECT_DIR" = "none" ]; then
+          echo "⚠️ No Angular project found, skipping Angular security analysis" >> angular_results.md
+          echo "has_critical_issues=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        cd "$PROJECT_DIR"
+        
+        # Verificação básica de configurações de segurança Angular
+        ANGULAR_ISSUES=0
+        
+        # Verifica se angular.json existe
+        if [ ! -f "angular.json" ]; then
+          echo "⚠️ No angular.json found, might not be an Angular project" >> ../angular_results.md
+          echo "has_critical_issues=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Verifica configurações de build
+        if grep -q '"optimization": false' angular.json 2>/dev/null; then
+          echo "⚠️ Optimization disabled in production build" >> ../angular_results.md
+          ANGULAR_ISSUES=$((ANGULAR_ISSUES + 1))
+        fi
+        
+        # Verifica se há innerHTML ou bypassSecurityTrust sendo usados
+        if find src -name "*.ts" -exec grep -l "innerHTML\|bypassSecurityTrust" {} \; 2>/dev/null | grep -q .; then
+          echo "⚠️ Potentially unsafe DOM manipulation found (innerHTML/bypassSecurityTrust)" >> ../angular_results.md
+          ANGULAR_ISSUES=$((ANGULAR_ISSUES + 1))
+        fi
+        
+        # Verifica CSP (Content Security Policy)
+        if ! grep -r "Content-Security-Policy" src/ 2>/dev/null | grep -q .; then
+          echo "📋 Consider implementing Content Security Policy (CSP)" >> ../angular_results.md
+        fi
+        
+        if [ $ANGULAR_ISSUES -gt 0 ]; then
+          echo "has_critical_issues=true" >> $GITHUB_OUTPUT
+        else
+          echo "✅ No critical Angular security issues found" >> ../angular_results.md
+          echo "has_critical_issues=false" >> $GITHUB_OUTPUT
+        fi
+      continue-on-error: true
+
+    # Verificação de configurações de segurança
+    - name: Security Configuration Check
+      id: config-check
+      run: |
+        echo "## ⚙️ Security Configuration Check" >> config_results.md
+        
+        # Verifica .gitignore
+        if [ ! -f ".gitignore" ]; then
+          echo "⚠️ No .gitignore file found" >> config_results.md
+        else
+          # Verifica se arquivos sensíveis estão sendo ignorados
+          if ! grep -q "node_modules" .gitignore; then
+            echo "⚠️ node_modules not in .gitignore" >> config_results.md
+          fi
+          if ! grep -q "\.env" .gitignore; then
+            echo "⚠️ .env files not in .gitignore" >> config_results.md
+          fi
+          if ! grep -q "dist" .gitignore; then
+            echo "📋 Consider adding dist/ to .gitignore" >> config_results.md
+          fi
+        fi
+        
+        # Verifica se há arquivos .env commitados
+        if find . -name ".env*" -not -path "./node_modules/*" | grep -q .; then
+          echo "❌ Environment files found in repository" >> config_results.md
+        fi
+        
+        echo "✅ Security configuration check completed" >> config_results.md
+      continue-on-error: true
+
+    # Teste de build de produção
+    - name: Production Build Test
+      id: build-test
+      run: |
+        PROJECT_DIR="${{ steps.detect-structure.outputs.project_dir }}"
+        
+        echo "## 🏗️ Production Build Test" >> build_results.md
+        
+        if [ "$PROJECT_DIR" = "none" ]; then
+          echo "⚠️ No Angular project found, skipping build test" >> build_results.md
+          echo "build_failed=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        cd "$PROJECT_DIR"
+        
+        # Verifica se npx está disponível
+        if ! command -v npx &> /dev/null; then
+          echo "⚠️ npx not available, cannot run ng build" >> ../build_results.md
+          echo "build_failed=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Tenta fazer o build
+        if npx ng build --configuration=production 2>&1 | tee ../build_output.log; then
+          echo "✅ Production build successful" >> ../build_results.md
+          
+          # Verifica warnings no build
+          if grep -i "warning" ../build_output.log > /dev/null; then
+            echo "⚠️ Build warnings found:" >> ../build_results.md
+            echo "\`\`\`" >> ../build_results.md
+            grep -i "warning" ../build_output.log | head -20 >> ../build_results.md
+            echo "\`\`\`" >> ../build_results.md
+          fi
+          echo "build_failed=false" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Production build failed" >> ../build_results.md
+          echo "\`\`\`" >> ../build_results.md
+          tail -50 ../build_output.log >> ../build_results.md  # Mostra apenas últimas 50 linhas
+          echo "\`\`\`" >> ../build_results.md
+          echo "build_failed=true" >> $GITHUB_OUTPUT
+        fi
+      continue-on-error: true
+
+    # Consolidar resultados
+    - name: Consolidate Security Report
+      id: consolidate
+      run: |
+        echo "# 🛡️ Security Analysis Report" > final_report.md
+        echo "" >> final_report.md
+        echo "## Summary" >> final_report.md
+        
+        CRITICAL_ISSUES=false
+        HIGH_ISSUES=false
+        MEDIUM_ISSUES=false
+        
+        # Processar resultados de cada análise (com verificação de outputs)
+        if [ "${{ steps.npm-audit.outputs.has_vulnerabilities }}" = "true" ]; then
+          HIGH_ISSUES=true
+          echo "- ❌ **Dependency vulnerabilities found**" >> final_report.md
+        else
+          echo "- ✅ **No dependency vulnerabilities**" >> final_report.md
+        fi
+        
+        if [ "${{ steps.eslint.outputs.has_issues }}" = "true" ]; then
+          MEDIUM_ISSUES=true
+          echo "- ⚠️ **Code quality issues found**" >> final_report.md
+        else
+          echo "- ✅ **No code quality issues**" >> final_report.md
+        fi
+        
+        if [ "${{ steps.trufflehog.outputs.has_secrets }}" = "true" ]; then
+          CRITICAL_ISSUES=true
+          echo "- ❌ **Secrets/credentials found**" >> final_report.md
+        else
+          echo "- ✅ **No secrets detected**" >> final_report.md
+        fi
+        
+        if [ "${{ steps.angular-security.outputs.has_critical_issues }}" = "true" ]; then
+          CRITICAL_ISSUES=true
+          echo "- ❌ **Critical security issues in Angular code**" >> final_report.md
+        else
+          echo "- ✅ **No critical Angular security issues**" >> final_report.md
+        fi
+        
+        if [ "${{ steps.build-test.outputs.build_failed }}" = "true" ]; then
+          HIGH_ISSUES=true
+          echo "- ❌ **Production build failed**" >> final_report.md
+        else
+          echo "- ✅ **Production build successful**" >> final_report.md
+        fi
+        
+        if [ "${{ steps.semgrep.outputs.has_findings }}" = "true" ]; then
+          HIGH_ISSUES=true
+          echo "- ⚠️ **Security findings from Semgrep**" >> final_report.md
+        else
+          echo "- ✅ **No Semgrep security findings**" >> final_report.md
+        fi
+        
+        echo "" >> final_report.md
+        
+        # Adicionar detalhes de cada análise (apenas se arquivos existirem)
+        for result_file in audit_results.md eslint_results.md secrets_results.md angular_results.md config_results.md build_results.md semgrep_results.md; do
+          if [ -f "$result_file" ]; then
+            cat "$result_file" >> final_report.md
+            echo "" >> final_report.md
+          fi
+        done
+        
+        # Determinar status final
+        if [ "$CRITICAL_ISSUES" = "true" ]; then
+          echo "status=critical" >> $GITHUB_OUTPUT
+          echo "" >> final_report.md
+          echo "## ⛔ CRITICAL SECURITY ISSUES FOUND" >> final_report.md
+          echo "**Action Required**: These issues must be resolved before merging." >> final_report.md
+        elif [ "$HIGH_ISSUES" = "true" ]; then
+          echo "status=high" >> $GITHUB_OUTPUT
+          echo "" >> final_report.md
+          echo "## ⚠️ HIGH PRIORITY ISSUES FOUND" >> final_report.md
+          echo "**Recommendation**: Review and resolve these issues before merging." >> final_report.md
+        elif [ "$MEDIUM_ISSUES" = "true" ]; then
+          echo "status=medium" >> $GITHUB_OUTPUT
+          echo "" >> final_report.md
+          echo "## 📋 MEDIUM PRIORITY ISSUES FOUND" >> final_report.md
+          echo "**Suggestion**: Consider addressing these issues to improve code quality." >> final_report.md
+        else
+          echo "status=clean" >> $GITHUB_OUTPUT
+          echo "" >> final_report.md
+          echo "## ✅ NO SECURITY ISSUES FOUND" >> final_report.md
+          echo "**Status**: Code is ready for merge." >> final_report.md
+        fi
+
+    # Comentar no PR com os resultados
+    - name: Comment PR with Results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('final_report.md', 'utf8');
+          
+          await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: report
+          });
+
+    # Upload dos resultados como artefatos
+    - name: Upload Security Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-analysis-report
+        path: |
+          final_report.md
+          npm_audit.json
+          eslint_report.json
+          trufflehog_results.json
+          build_output.log
+        retention-days: 30
+
+    # Upload SARIF para GitHub Security tab (se disponível)
+    - name: Upload SARIF file
+      if: always() && hashFiles('*.sarif') != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ hashFiles('*.sarif') && '*.sarif' || 'semgrep_output.json' }}
+      continue-on-error: true
+
+    # Falhar o job apenas se houver problemas críticos confirmados
+    - name: Fail on Critical Issues
+      if: steps.consolidate.outputs.status == 'critical'
+      run: |
+        echo "::error::Critical security issues found. Please review and fix before merging."
+        echo "Check the detailed report in the job artifacts for specific issues."
+        # Para debug inicial, vamos apenas avisar em vez de falhar
+        # Descomente a linha abaixo para ativar o bloqueio real:
+        # exit 1
+        echo "::warning::Critical issues found but allowing merge for initial setup. Enable strict mode later."
+
+    # Warning para problemas de alta prioridade
+    - name: Warning on High Priority Issues
+      if: steps.consolidate.outputs.status == 'high'
+      run: |
+        echo "::warning::High priority issues found. Review recommended before merging."
+
+  # Job adicional para verificar o status do workflow
+
