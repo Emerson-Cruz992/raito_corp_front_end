@@ -1,0 +1,13 @@
+{
+  "environments": [
+    {
+      "id": "sala-estar",
+      "name": "Sala de Estar",
+      "description": "Ambiente aconchegante para relaxar",
+      "thumbnail": "/assets/environments/sala-estar/thumbnails/sala-estar-thumb.jpg",
+      "model": "/assets/environments/sala-estar/sala-estar.glb",
+      "lightmap": "/assets/environments/sala-estar/sala-estar-lightmap.jpg",
+      "config": "/assets/environments/sala-estar/sala-estar-config.json"
+    }
+  ]
+}

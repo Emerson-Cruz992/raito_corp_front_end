@@ -1,0 +1,69 @@
+<div class="visualizador-3d-container">
+  <!-- Canvas Babylon.js em tela cheia -->
+  <div class="canvas-wrapper">
+    <canvas #renderCanvas class="renderCanvas" (window:resize)="onWindowResize($event)"></canvas>
+
+    <!-- Loading Screen -->
+    <div class="loading-overlay" *ngIf="isLoading">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Carregando ambiente 3D...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Painel de controle compacto -->
+  <div class="control-panel compact-panel" [class.hidden]="!isPanelVisible">
+    <!-- Seção de Iluminação -->
+    <div class="panel-section">
+      <h3>⚡ Iluminação</h3>
+
+      <!-- Categoria de Iluminação -->
+      <div class="category-selector">
+        <div class="button-group">
+          <button
+            *ngFor="let cat of lightingCategories"
+            [class.active]="currentLightingCategory === cat.value"
+            (click)="onLightingCategoryChange(cat.value)"
+            class="category-btn"
+          >
+            {{ cat.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Presets de Iluminação -->
+      <div class="presets-list">
+        <button
+          *ngFor="let preset of lightingPresets"
+          [class.active]="currentLightingPreset === preset.id"
+          (click)="applyLighting(preset.id)"
+          class="preset-btn"
+          [title]="preset.description"
+        >
+          <span class="preset-name">{{ preset.name }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Seção de Ambiente -->
+    <div class="panel-section">
+      <h3>🏠 Ambiente</h3>
+      <div class="presets-list">
+        <button
+          *ngFor="let preset of environmentPresets"
+          [class.active]="currentEnvironmentPreset === preset.id"
+          (click)="loadEnvironment(preset.id)"
+          class="preset-btn"
+        >
+          {{ preset.name }}
+        </button>
+      </div>
+    </div>
+    
+    <!-- Botão para esconder/mostrar painel -->
+    <button class="toggle-panel-btn" (click)="toggleControlPanel()">
+      {{ isPanelVisible ? '◀' : '▶' }}
+    </button>
+  </div>
+</div>

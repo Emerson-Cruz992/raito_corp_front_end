@@ -15,5 +15,9 @@ export const routes: Routes = [
     path: 'login',
     loadComponent: () => import('./login/login.component').then(m => m.LoginComponent)
   },
+  {
+    path: 'visualizador-3d',
+    loadComponent: () => import('./visualizador-3d/visualizador-3d.component').then(m => m.Visualizador3dComponent)
+  },
   { path: '**', redirectTo: '' }
 ];

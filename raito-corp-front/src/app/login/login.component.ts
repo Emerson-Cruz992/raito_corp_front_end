@@ -11,36 +11,14 @@ import { RouterModule } from '@angular/router';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  activeTab: 'login' | 'register' = 'login';
-
-  loginForm = { 
+  form = { 
     email: '', 
     password: '', 
     remember: true 
   };
 
-  registerForm = {
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  };
-
-  setActiveTab(tab: 'login' | 'register') {
-    this.activeTab = tab;
-  }
-
-  onLoginSubmit() {
-    console.log('Login submit', this.loginForm);
+  onSubmit() {
+    console.log('Login submit', this.form);
     // Aqui você implementaria a lógica de login
-  }
-
-  onRegisterSubmit() {
-    if (this.registerForm.password !== this.registerForm.confirmPassword) {
-      alert('As senhas não coincidem');
-      return;
-    }
-    console.log('Register submit', this.registerForm);
-    // Aqui você implementaria a lógica de cadastro
   }
 }

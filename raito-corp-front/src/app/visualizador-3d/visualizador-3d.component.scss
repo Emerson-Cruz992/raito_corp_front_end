@@ -1,0 +1,496 @@
+// Variáveis - Paleta minimalista branco e preto
+$primary: #000000;
+$secondary: #FFFFFF;
+$accent: #F0F0F0;
+$text-dark: #000000;
+$text-light: #FFFFFF;
+$border: #E0E0E0;
+
+.visualizador-3d-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #2c2c2c;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  z-index: 1000;
+}
+
+  .canvas-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    .renderCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background-color: #2c2c2c;
+      outline: none;
+      touch-action: none;
+    }
+
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(44, 44, 44, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+
+      .loading-spinner {
+        text-align: center;
+
+        .spinner {
+          width: 50px;
+          height: 50px;
+          border: 3px solid #555;
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 20px;
+        }
+
+        p {
+          color: #fff;
+          font-size: 14px;
+          font-weight: 500;
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  // Painéis de Controle
+  .control-panel {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 4px;
+    height: auto;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    color: $text-light;
+    font-size: 13px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    width: 280px;
+    transition: transform 0.3s ease;
+    z-index: 100;
+
+    &.left-panel {
+      left: 24px;
+      top: 24px;
+      right: auto;
+    }
+
+    &.right-panel {
+      right: 24px;
+      top: 24px;
+      left: auto;
+    }
+    
+    &.compact-panel {
+      right: 24px;
+      top: 24px;
+      left: auto;
+      width: 280px;
+      
+      &.hidden {
+        transform: translateX(calc(100% - 30px));
+      }
+    }
+
+    h3 {
+      margin: 0 0 16px 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: $text-light;
+      border-bottom: 2px solid $secondary;
+      padding-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    // Scrollbar
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+    }
+    
+    // Botão para esconder/mostrar painel
+    .toggle-panel-btn {
+      position: absolute;
+      left: -30px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 60px;
+      background: rgba(0, 0, 0, 0.7);
+      color: $text-light;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-right: none;
+      border-radius: 4px 0 0 4px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &:hover {
+        background: rgba(0, 0, 0, 0.9);
+      }
+    }
+  }
+
+  // Seções
+  .panel-section {
+    margin-bottom: 18px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: $text-light;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  // Seletor de Categoria
+  .category-selector {
+    margin-bottom: 12px;
+
+    .button-group {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .category-btn {
+      flex: 1;
+      min-width: 45px;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: $text-light;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      &.active {
+        background: rgba(255, 255, 255, 0.25);
+        color: $secondary;
+        border-color: $secondary;
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+
+  // Lista de Presets
+  .presets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .preset-btn {
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      color: $text-light;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+      text-align: left;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      min-height: 32px;
+
+      .preset-name {
+        font-weight: 600;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .preset-category {
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.7);
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2px 5px;
+        border-radius: 2px;
+        text-transform: uppercase;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateX(2px);
+      }
+
+      &.active {
+        background: rgba(255, 255, 255, 0.25);
+        color: $secondary;
+        border-color: $secondary;
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+
+        .preset-category {
+          background: rgba(255, 255, 255, 0.2);
+          color: $secondary;
+        }
+      }
+    }
+  }
+
+  // Grid de Câmera
+  .camera-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+
+    .camera-preset-btn {
+      padding: 8px 6px;
+      background: $accent;
+      color: $text-dark;
+      border: 1px solid $border;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &:hover {
+        background: #E8E8E8;
+        border-color: $primary;
+      }
+
+      &.active {
+        background: $primary;
+        color: $secondary;
+        border-color: $primary;
+      }
+    }
+  }
+
+  // Zoom Controls
+  .zoom-controls {
+    margin-bottom: 12px;
+
+    .zoom-buttons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+
+      .zoom-btn {
+        flex: 1;
+        padding: 6px 4px;
+        background: $accent;
+        color: $text-dark;
+        border: 1px solid $border;
+        border-radius: 2px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+          background: #E8E8E8;
+          border-color: $primary;
+        }
+
+        &:active {
+          transform: scale(0.98);
+        }
+      }
+
+      .zoom-display {
+        flex: 1;
+        text-align: center;
+        padding: 6px 4px;
+        background: $accent;
+        border: 1px solid $border;
+        border-radius: 2px;
+        font-weight: 600;
+        font-size: 11px;
+        color: $text-dark;
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+  }
+
+  // Seção de Apresentação
+  .presentation-section {
+    .presentation-btn {
+      width: 100%;
+      padding: 8px 10px;
+      background: $primary;
+      color: $secondary;
+      border: 1px solid $primary;
+      border-radius: 2px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      transition: all 0.2s ease;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background: $secondary;
+        color: $primary;
+        border-color: $primary;
+      }
+
+      &:active {
+        transform: scale(0.98);
+      }
+    }
+  }
+
+  // Info Badge
+  .info-float {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+
+    .info-badge {
+      background: $primary;
+      color: $secondary;
+      border-radius: 2px;
+      padding: 10px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      animation: slideUp 0.4s ease;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  // Responsivo
+  @media (max-width: 1024px) {
+    .control-panel {
+      width: 240px;
+      padding: 16px;
+      font-size: 12px;
+      max-height: calc(100vh - 48px);
+
+      h3 {
+        font-size: 12px;
+        margin-bottom: 12px;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .control-panel {
+      position: fixed;
+      width: calc(100vw - 30px);
+      max-width: 100%;
+      max-height: 50vh;
+      left: 15px;
+      right: 15px;
+      bottom: 15px;
+      top: auto;
+      border-radius: 2px;
+      padding: 16px;
+
+      &.left-panel,
+      &.right-panel,
+      &.compact-panel {
+        left: 15px;
+        right: 15px;
+        top: auto;
+        width: calc(100vw - 30px);
+        
+        &.hidden {
+          transform: translateY(calc(100% + 10px));
+        }
+      }
+    }
+  }
+}
