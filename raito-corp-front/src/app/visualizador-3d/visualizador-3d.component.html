@@ -1,69 +1,151 @@
-<div class="visualizador-3d-container">
-  <!-- Canvas Babylon.js em tela cheia -->
-  <div class="canvas-wrapper">
-    <canvas #renderCanvas class="renderCanvas" (window:resize)="onWindowResize($event)"></canvas>
-
-    <!-- Loading Screen -->
-    <div class="loading-overlay" *ngIf="isLoading">
-      <div class="loading-spinner">
-        <div class="spinner"></div>
-        <p>Carregando ambiente 3D...</p>
-      </div>
+<div class="visualizador-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo">Raitõ Corp</div>
+      <h1 class="page-title">Visualizador 3D</h1>
     </div>
-  </div>
+    <div class="header-right">
+      <button class="btn-customize" (click)="toggleCustomizationPanel()">
+        Customize this space
+      </button>
+      <button class="btn-back" (click)="goBack()" title="Voltar">
+        ← Voltar
+      </button>
+    </div>
+  </header>
 
-  <!-- Painel de controle compacto -->
-  <div class="control-panel compact-panel" [class.hidden]="!isPanelVisible">
-    <!-- Seção de Iluminação -->
-    <div class="panel-section">
-      <h3>⚡ Iluminação</h3>
+  <!-- Main Layout - 2 Colunas -->
+  <div class="main-layout">
 
-      <!-- Categoria de Iluminação -->
-      <div class="category-selector">
-        <div class="button-group">
-          <button
-            *ngFor="let cat of lightingCategories"
-            [class.active]="currentLightingCategory === cat.value"
-            (click)="onLightingCategoryChange(cat.value)"
-            class="category-btn"
+    <!-- Coluna Esquerda - Seletor de Ambientes -->
+    <aside class="sidebar-left" [class.collapsed]="isCustomizing">
+      <div class="sidebar-header">
+        <button class="btn-create-space">Create space</button>
+        <button class="btn-my-spaces">
+          <span class="icon">📁</span>
+          My spaces
+        </button>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Grid de Ambientes Pré-definidos -->
+      <div class="environments-grid">
+        <h3 class="section-title">Ambientes Pré-definidos</h3>
+
+        <div class="environment-cards">
+          <div
+            *ngFor="let env of allEnvironments"
+            class="environment-card"
+            [class.active]="selectedEnvironment === env.id"
+            (click)="selectEnvironment(env.id)"
           >
-            {{ cat.label }}
+            <div class="card-image">
+              <img [src]="env.previewImage || 'assets/placeholder-room.jpg'" [alt]="env.name">
+            </div>
+            <div class="card-content">
+              <div class="card-radio">
+                <input
+                  type="radio"
+                  [id]="'env-' + env.id"
+                  [name]="'environment'"
+                  [checked]="selectedEnvironment === env.id"
+                  (change)="selectEnvironment(env.id)"
+                >
+              </div>
+              <label [for]="'env-' + env.id" class="card-label">{{ env.name }}</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="btn-customize-footer" (click)="toggleCustomizationPanel()">
+          Customize space
+        </button>
+      </div>
+    </aside>
+
+    <!-- Coluna Direita - Visualizador 3D + Painel de Customização -->
+    <main class="content-right">
+
+      <!-- Área do Visualizador 3D -->
+      <div class="viewport-3d">
+        <canvas
+          #renderCanvas
+          class="renderCanvas"
+          (window:resize)="onWindowResize($event)"
+        ></canvas>
+
+        <!-- Loading Screen -->
+        <div class="loading-overlay" *ngIf="isLoading">
+          <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Carregando ambiente 3D...</p>
+          </div>
+        </div>
+
+        <!-- Instruções de Controle -->
+        <div class="viewport-instructions" *ngIf="!isLoading">
+          <p>Arraste para rotacionar • Scroll para zoom</p>
+        </div>
+
+        <!-- Ferramentas 3D (overlay) -->
+        <div class="viewport-tools">
+          <button class="tool-btn" (click)="resetCamera()" title="Reset Câmera">
+            🔄
+          </button>
+          <button class="tool-btn" (click)="toggleLights()" title="Desligar Luz">
+            💡
           </button>
         </div>
       </div>
 
-      <!-- Presets de Iluminação -->
-      <div class="presets-list">
-        <button
-          *ngFor="let preset of lightingPresets"
-          [class.active]="currentLightingPreset === preset.id"
-          (click)="applyLighting(preset.id)"
-          class="preset-btn"
-          [title]="preset.description"
-        >
-          <span class="preset-name">{{ preset.name }}</span>
-        </button>
-      </div>
-    </div>
+      <!-- Painel de Customização de Iluminação -->
+      <aside class="customization-panel" [class.visible]="isCustomizing">
+        <div class="panel-header">
+          <h2 class="panel-title">Customize this space</h2>
+          <button class="btn-close-panel" (click)="toggleCustomizationPanel()">✕</button>
+        </div>
 
-    <!-- Seção de Ambiente -->
-    <div class="panel-section">
-      <h3>🏠 Ambiente</h3>
-      <div class="presets-list">
-        <button
-          *ngFor="let preset of environmentPresets"
-          [class.active]="currentEnvironmentPreset === preset.id"
-          (click)="loadEnvironment(preset.id)"
-          class="preset-btn"
-        >
-          {{ preset.name }}
-        </button>
-      </div>
-    </div>
-    
-    <!-- Botão para esconder/mostrar painel -->
-    <button class="toggle-panel-btn" (click)="toggleControlPanel()">
-      {{ isPanelVisible ? '◀' : '▶' }}
-    </button>
+        <div class="panel-content">
+
+          <!-- Grupo 1: Tipo de Iluminação -->
+          <div class="control-group">
+            <label class="control-label">Tipo de Iluminação</label>
+            <div class="lamp-types">
+              <button
+                *ngFor="let type of lampTypes"
+                class="lamp-type-btn"
+                [class.active]="selectedLampType === type.id"
+                (click)="selectLampType(type.id)"
+              >
+                {{ type.name }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Grupo 2: Intensidade da Luz -->
+          <div class="control-group">
+            <label class="control-label">Intensidade da Luz</label>
+            <div class="slider-control">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                [(ngModel)]="lightIntensity"
+                (input)="updateLightIntensity($event)"
+                class="slider"
+              >
+              <span class="slider-value">{{ lightIntensity }}%</span>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+
+    </main>
+
   </div>
 </div>

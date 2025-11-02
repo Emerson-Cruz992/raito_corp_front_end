@@ -10,9 +10,9 @@ export const CAMERA_PRESETS: Record<string, CameraPreset> = {
     name: 'Visão Padrão',
     description: 'Visão cinematográfica otimizada para visualização completa',
     settings: {
-      position: { x: 6, y: 4, z: 6 },
-      target: { x: 0, y: 1.2, z: 0 },
-      fov: 60,
+      position: { x: 4, y: 3, z: 4 },
+      target: { x: 0, y: 0.5, z: 0 },
+      fov: 0.9,
       minZoom: 1,
       maxZoom: 1,
       currentZoom: 1,

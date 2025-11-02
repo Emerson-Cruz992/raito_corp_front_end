@@ -1,25 +1,23 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { BabylonService } from './services/babylon.service';
-import { LightingService } from './services/lighting.service';
-import { EnvironmentService } from './services/environment.service';
-import { CameraControlService } from './services/camera-control.service';
-import { ProductLoaderService } from './services/product-loader.service';
-import { LIGHTING_PRESETS, PRESET_GROUPS } from './configs/lighting-presets';
-import { ENVIRONMENT_PRESETS, ENVIRONMENT_GROUPS } from './configs/environment-configs';
-import { CAMERA_PRESETS, CAMERA_CATEGORIES } from './configs/camera-presets';
+import { ThreeService } from './services/three.service';
+import { ThreeLightingService } from './services/three-lighting.service';
+import { ThreeEnvironmentService } from './services/three-environment.service';
+import { ENVIRONMENT_PRESETS } from './configs/environment-configs';
 
 /**
  * Componente principal do visualizador 3D
- * Integra todos os serviços para criar experiência imersiva de iluminação
+ * Migrado para Three.js para melhor performance
  */
 @Component({
   selector: 'app-visualizador-3d',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './visualizador-3d.component.html',
   styleUrls: ['./visualizador-3d.component.scss']
 })
@@ -28,83 +26,79 @@ export class Visualizador3dComponent implements OnInit, AfterViewInit, OnDestroy
 
   private destroy$ = new Subject<void>();
 
-  // Dados para UI
-  lightingCategories = [
-    { label: 'Claro', value: 'claro' },
-    { label: 'Neutro', value: 'neutro' },
-    { label: 'Quente', value: 'quente' },
-    { label: 'Cênico', value: 'cenico' }
-  ];
-
-  environmentCategories = [
-    { label: 'Sala', value: 'sala' },
-    { label: 'Banheiro', value: 'banheiro' },
-    { label: 'Quarto', value: 'quarto' }
-  ];
-
-  currentLightingCategory = 'claro';
-  currentEnvironmentCategory = 'sala';
-
-  lightingPresets: any[] = [];
-  environmentPresets: any[] = [];
-  cameraPresets: any[] = [];
-
-  currentLightingPreset = '';
-  currentEnvironmentPreset = '';
-  currentCameraPreset = '';
-
-  isInitialized = false;
+  // ============================================
+  // Estado da Interface
+  // ============================================
   isLoading = true;
-  isPanelVisible = true;
+  isInitialized = false;
+  isCustomizing = false;
+
+  // ============================================
+  // Ambientes
+  // ============================================
+  allEnvironments = [
+    { ...ENVIRONMENT_PRESETS['sala_moderna'], previewImage: 'assets/environments/sala_moderna.jpg' }
+  ];
+  selectedEnvironment = 'sala_moderna';
+
+  // ============================================
+  // Tipos de Iluminação
+  // ============================================
+  lampTypes = [
+    {
+      id: 'sala_natural',
+      name: 'Natural',
+      preset: 'sala_natural'
+    }
+  ];
+  selectedLampType = 'sala_natural';
+
+  // ============================================
+  // Controles de Iluminação
+  // ============================================
+  lightIntensity = 100;
+  lightsEnabled = true;
 
   constructor(
-    private babylonService: BabylonService,
-    private lightingService: LightingService,
-    private environmentService: EnvironmentService,
-    private cameraControlService: CameraControlService,
-    private productLoaderService: ProductLoaderService
+    private threeService: ThreeService,
+    private lightingService: ThreeLightingService,
+    private environmentService: ThreeEnvironmentService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
-    this.updateLightingPresets();
-    this.updateEnvironmentPresets();
-    this.updateCameraPresets();
     this.setupStateSubscriptions();
-    
     document.body.style.overflow = 'hidden';
     document.body.style.margin = '0';
     document.body.style.padding = '0';
   }
 
   ngAfterViewInit(): void {
-    // Inicializar Babylon.js
     setTimeout(() => {
-      this.initializeBabylon();
+      this.initializeThree();
     }, 100);
   }
 
   /**
-   * Inicializa o engine Babylon.js
+   * Inicializa o Three.js
    */
-  private initializeBabylon(): void {
+  private initializeThree(): void {
     const canvas = this.renderCanvas.nativeElement;
 
     try {
-      this.babylonService.initializeEngine(canvas);
-      this.cameraControlService.initializeCamera();
+      // Inicializar Three.js
+      this.threeService.initializeEngine(canvas);
 
-      if (this.environmentPresets.length > 0) {
-        this.loadEnvironment(this.environmentPresets[0].id);
-      }
+      // Carregar ambiente padrão
+      this.loadEnvironment(this.selectedEnvironment);
 
-      this.currentLightingCategory = 'cenico';
-      this.updateLightingPresets();
-      this.applyLighting('noturna');
+      // Aplicar iluminação padrão
+      this.applyLighting(this.selectedLampType);
 
       this.isInitialized = true;
       this.isLoading = false;
     } catch (error) {
-      console.error('Erro ao inicializar Babylon.js:', error);
+      console.error('Erro ao inicializar Three.js:', error);
       this.isLoading = false;
     }
   }
@@ -117,170 +111,102 @@ export class Visualizador3dComponent implements OnInit, AfterViewInit, OnDestroy
       .getLightingState$()
       .pipe(takeUntil(this.destroy$))
       .subscribe(state => {
-        if (state) {
-          this.currentLightingPreset = state.currentPreset.id;
-        }
+        // Atualizar estado de iluminação
       });
 
     this.environmentService
       .getEnvironmentState$()
       .pipe(takeUntil(this.destroy$))
       .subscribe(state => {
-        if (state) {
-          this.currentEnvironmentPreset = state.currentEnvironment.id;
-        }
-      });
-
-    this.cameraControlService
-      .getCameraSettings$()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(settings => {
-        // Atualizar UI se necessário
+        // Atualizar estado de ambiente
       });
   }
 
-  /**
-   * Atualiza lista de presets de iluminação
-   */
-  private updateLightingPresets(): void {
-    const group = PRESET_GROUPS[this.currentLightingCategory as keyof typeof PRESET_GROUPS];
-    this.lightingPresets = group || [];
+  // ============================================
+  // Seleção de Ambiente
+  // ============================================
+  selectEnvironment(environmentId: string): void {
+    this.selectedEnvironment = environmentId;
+    this.loadEnvironment(environmentId);
   }
 
-  /**
-   * Atualiza lista de presets de ambiente
-   */
-  private updateEnvironmentPresets(): void {
-    const group = ENVIRONMENT_GROUPS[this.currentEnvironmentCategory as keyof typeof ENVIRONMENT_GROUPS];
-    this.environmentPresets = group || [];
+  private loadEnvironment(environmentId: string): void {
+    this.environmentService.loadEnvironment(environmentId);
   }
 
-  /**
-   * Atualiza lista de presets de câmera
-   */
-  private updateCameraPresets(): void {
-    this.cameraPresets = CAMERA_PRESETS['default']
-      ? Object.values(CAMERA_PRESETS).slice(0, 9)
-      : [];
+  // ============================================
+  // Painel de Customização
+  // ============================================
+  toggleCustomizationPanel(): void {
+    this.isCustomizing = !this.isCustomizing;
   }
 
-  /**
-   * Altera a categoria de iluminação
-   */
-  onLightingCategoryChange(category: string): void {
-    this.currentLightingCategory = category;
-    this.updateLightingPresets();
-
-    if (this.lightingPresets.length > 0) {
-      this.applyLighting(this.lightingPresets[0].id);
+  // ============================================
+  // Controles de Iluminação
+  // ============================================
+  selectLampType(typeId: string): void {
+    this.selectedLampType = typeId;
+    const lampType = this.lampTypes.find(t => t.id === typeId);
+    if (lampType) {
+      this.applyLighting(lampType.preset);
     }
   }
 
-  /**
-   * Altera a categoria de ambiente
-   */
-  onEnvironmentCategoryChange(category: string): void {
-    this.currentEnvironmentCategory = category;
-    this.updateEnvironmentPresets();
+  updateLightIntensity(event: any): void {
+    this.lightIntensity = Number(event.target.value);
+    const multiplier = this.lightIntensity / 100;
 
-    if (this.environmentPresets.length > 0) {
-      this.loadEnvironment(this.environmentPresets[0].id);
-    }
+    // Atualizar todas as luzes da cena
+    const lights = this.lightingService.getLights();
+    lights.forEach(light => {
+      const baseIntensity = (light as any)._baseIntensity || light.intensity;
+      (light as any)._baseIntensity = baseIntensity;
+      light.intensity = baseIntensity * multiplier;
+    });
   }
 
-  /**
-   * Aplica um preset de iluminação
-   */
-  applyLighting(presetId: string): void {
+  private applyLighting(presetId: string): void {
     this.lightingService.applyPreset(presetId);
   }
 
-  /**
-   * Carrega um ambiente e aplica a câmera estática correspondente
-   */
-  loadEnvironment(environmentId: string): void {
-    this.environmentService.loadEnvironment(environmentId);
-
-    // Aplicar câmera estática específica para este ambiente
-    // Mapear ID do ambiente para ID da câmera correspondente
-    let cameraId = 'default';
-    
-    // Determinar qual câmera usar com base no ambiente
-    if (environmentId.includes('sala_estar')) {
-      cameraId = 'sala_estar';
-    } else if (environmentId.includes('sala_comercial')) {
-      cameraId = 'sala_comercial';
-    } else if (environmentId.includes('sala_gourmet')) {
-      cameraId = 'sala_gourmet';
-    } else if (environmentId.includes('banheiro_moderno')) {
-      cameraId = 'banheiro_moderno';
-    } else if (environmentId.includes('banheiro_rustico')) {
-      cameraId = 'banheiro_rustico';
-    } else if (environmentId.includes('banheiro_spa')) {
-      cameraId = 'banheiro_spa';
-    } else if (environmentId.includes('quarto_suite')) {
-      cameraId = 'quarto_suite';
-    } else if (environmentId.includes('quarto_infantil')) {
-      cameraId = 'quarto_infantil';
-    } else if (environmentId.includes('quarto_hospede')) {
-      cameraId = 'quarto_hospede';
+  // ============================================
+  // Ferramentas da Viewport
+  // ============================================
+  resetCamera(): void {
+    const controls = this.threeService.getControls();
+    if (controls) {
+      controls.reset();
     }
-    
-    // Aplicar a câmera estática
-    this.cameraControlService.applyPreset(cameraId);
   }
 
-  /**
-   * Aplica um preset de câmera
-   */
-  applyCamera(presetId: string): void {
-    this.cameraControlService.applyPreset(presetId);
+  toggleLights(): void {
+    this.lightsEnabled = !this.lightsEnabled;
+    const lights = this.lightingService.getLights();
+    lights.forEach(light => {
+      light.visible = this.lightsEnabled;
+    });
   }
 
-  /**
-   * Zoom in
-   */
-  zoomIn(): void {
-    this.cameraControlService.zoomIn(1);
+  // ============================================
+  // Navegação
+  // ============================================
+  goBack(): void {
+    this.router.navigate(['/']);
   }
 
-  /**
-   * Zoom out
-   */
-  zoomOut(): void {
-    this.cameraControlService.zoomOut(1);
-  }
-
-  /**
-   * Alterna modo apresentação (rotação automática)
-   */
-  togglePresentation(): void {
-    this.cameraControlService.applyPreset('presentation');
-  }
-  
-  /**
-   * Alterna visibilidade do painel de controle
-   */
-  toggleControlPanel(): void {
-    this.isPanelVisible = !this.isPanelVisible;
-  }
-
+  // ============================================
+  // Eventos
+  // ============================================
   onWindowResize(event: Event): void {
-    if (this.babylonService.getEngine()) {
-      this.babylonService.getEngine()?.resize();
-    }
+    // O Three.js já lida com redimensionamento automaticamente
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
 
-    this.cameraControlService.dispose();
-    this.lightingService.getLights();
-    this.productLoaderService.clearProducts();
-    this.babylonService.stopRenderLoop();
-    this.babylonService.clearScene();
-    
+    this.threeService.clearScene();
+
     document.body.style.overflow = '';
     document.body.style.margin = '';
     document.body.style.padding = '';
