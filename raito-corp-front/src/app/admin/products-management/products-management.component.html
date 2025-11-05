@@ -1,0 +1,68 @@
+<div class="products-management">
+  <div class="page-header">
+    <div>
+      <h2>Gestão de Produtos</h2>
+      <p>Gerenciar catálogo completo de produtos</p>
+    </div>
+    <button class="btn-new" (click)="openNewProductModal()">+ Novo Produto</button>
+  </div>
+
+  <div class="search-bar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar produtos...">
+  </div>
+
+  <div class="products-table">
+    <div class="table-header">
+      <span>Produto</span>
+      <span>Categoria</span>
+      <span>Preço</span>
+      <span>Estoque</span>
+      <span>Vendidos</span>
+      <span>Receita</span>
+      <span>Ações</span>
+    </div>
+    <div class="table-row" *ngFor="let product of filteredProducts">
+      <span class="product-name">{{product.nome}}</span>
+      <span class="badge">{{product.categoria}}</span>
+      <span>{{formatCurrency(product.preco)}}</span>
+      <span [class.low-stock]="product.estoque <= 10">{{product.estoque}}</span>
+      <span>{{product.vendidos}}</span>
+      <span>{{formatCurrency(product.receita)}}</span>
+      <div class="actions">
+        <button class="btn-icon" (click)="openEditModal(product)" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="btn-icon delete" (click)="openDeleteModal(product)" title="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <app-product-modal
+    [isOpen]="isModalOpen"
+    [product]="selectedProduct"
+    (close)="closeModal()"
+    (save)="saveProduct($event)">
+  </app-product-modal>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="isDeleteModalOpen">
+    <div class="delete-modal">
+      <div class="delete-modal-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <h3>Tem certeza?</h3>
+      </div>
+      <div class="delete-modal-body">
+        <p *ngIf="productToDelete">Você está prestes a excluir o produto <strong>{{productToDelete.nome}}</strong>. Esta ação não pode ser desfeita.</p>
+      </div>
+      <div class="delete-modal-footer">
+        <button class="btn-cancel" (click)="closeDeleteModal()">Cancelar</button>
+        <button class="btn-delete" (click)="confirmDelete()">Excluir Produto</button>
+      </div>
+    </div>
+  </div>
+</div>

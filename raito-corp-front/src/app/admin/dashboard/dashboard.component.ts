@@ -1,0 +1,71 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { AdminDataService } from '../../shared/admin-data.service';
+import { DashboardMetrics, SalesData, CategorySales, Product } from '../../shared/models/admin.models';
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.scss'
+})
+export class DashboardComponent implements OnInit {
+  metrics!: DashboardMetrics;
+  salesByMonth: SalesData[] = [];
+  categorySales: CategorySales[] = [];
+  topProducts: Product[] = [];
+
+  constructor(private adminDataService: AdminDataService) {}
+
+  ngOnInit() {
+    this.loadDashboardData();
+  }
+
+  loadDashboardData() {
+    this.metrics = this.adminDataService.getDashboardMetrics();
+    this.salesByMonth = this.adminDataService.getSalesByMonth();
+    this.categorySales = this.adminDataService.getCategorySales();
+    this.topProducts = this.adminDataService.getTopProducts(5);
+  }
+
+  formatCurrency(value: number): string {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  getMaxSalesValue(): number {
+    return Math.max(...this.salesByMonth.map(s => s.receita));
+  }
+
+  getSalesBarHeight(receita: number): number {
+    const max = this.getMaxSalesValue();
+    return (receita / max) * 100;
+  }
+
+  getCategoryColor(index: number): string {
+    const colors = ['#111827', '#374151', '#4b5563', '#6b7280', '#9ca3af'];
+    return colors[index] || '#d1d5db';
+  }
+
+  getPieSegments() {
+    const radius = 70;
+    const circumference = 2 * Math.PI * radius;
+    let accumulatedPercentage = 0;
+
+    return this.categorySales.map((cat, index) => {
+      const percentage = cat.percentual;
+      const dashLength = (percentage / 100) * circumference;
+      const gapLength = circumference - dashLength;
+      const rotation = (accumulatedPercentage / 100) * 360;
+
+      accumulatedPercentage += percentage;
+
+      return {
+        color: this.getCategoryColor(index),
+        dasharray: `${dashLength} ${gapLength}`,
+        dashoffset: 0,
+        rotation: rotation
+      };
+    });
+  }
+}

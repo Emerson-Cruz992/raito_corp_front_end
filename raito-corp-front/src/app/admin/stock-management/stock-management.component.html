@@ -1,0 +1,38 @@
+<div class="stock-management">
+  <div class="page-header">
+    <div>
+      <h2>Controle de Estoque</h2>
+      <p>Monitorar níveis de estoque e alertas</p>
+    </div>
+  </div>
+
+  <div class="alert-banner" *ngIf="stockAlerts.length > 0">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <p><strong>{{stockAlerts.length}} produtos</strong> com estoque baixo requerem atenção imediata.</p>
+  </div>
+
+  <div class="stock-table">
+    <div class="table-header">
+      <span>Produto</span>
+      <span>Categoria</span>
+      <span>Estoque Atual</span>
+      <span>Alerta em</span>
+      <span>Status</span>
+      <span>Ações</span>
+    </div>
+    <div class="table-row" *ngFor="let product of allProducts">
+      <span class="product-name">{{product.nome}}</span>
+      <span>{{product.categoria}}</span>
+      <span [class.critical]="product.estoque <= 5" [class.warning]="product.estoque > 5 && product.estoque <= 10">{{product.estoque}} un.</span>
+      <span>10 un.</span>
+      <span class="status">
+        <span class="badge" [class.critical]="product.estoque <= 5" [class.normal]="product.estoque > 10">
+          {{product.estoque <= 5 ? 'Crítico' : product.estoque <= 10 ? 'Normal' : 'Normal'}}
+        </span>
+      </span>
+      <button class="btn-update">Atualizar</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,92 @@
+<div class="admin-layout">
+  <!-- Header -->
+  <header class="admin-header">
+    <button class="back-btn" (click)="goBack()" aria-label="Voltar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      <span>Voltar</span>
+    </button>
+
+    <div class="header-brand">
+      <div class="brand-icon">
+        <div class="brand-circle"></div>
+      </div>
+      <div class="brand-text">
+        <h1>Raitõ Corp - Admin</h1>
+        <p>Painel Administrativo</p>
+      </div>
+    </div>
+
+    <div class="header-user">
+      <span class="user-greeting">Bem-vindo, {{ currentUser }}</span>
+      <button class="admin-badge" aria-label="Admin">
+        Admin
+      </button>
+    </div>
+  </header>
+
+  <div class="admin-container">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <nav class="sidebar-nav">
+        <button
+          class="nav-item"
+          [class.active]="isActiveRoute('dashboard')"
+          (click)="navigateTo('dashboard')"
+        >
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          <span>Dashboard</span>
+        </button>
+
+        <button
+          class="nav-item"
+          [class.active]="isActiveRoute('products')"
+          (click)="navigateTo('products')"
+        >
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6m5.66-13A10 10 0 0 1 22 12a10 10 0 0 1-4.34 8M6.34 4A10 10 0 0 0 2 12a10 10 0 0 0 4.34 8"/>
+          </svg>
+          <span>Produtos</span>
+        </button>
+
+        <button
+          class="nav-item"
+          [class.active]="isActiveRoute('stock')"
+          (click)="navigateTo('stock')"
+        >
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <path d="M12 22v-10"/>
+            <path d="M3.27 6.96L12 12.01l8.73-5.05"/>
+          </svg>
+          <span>Estoque</span>
+        </button>
+
+        <button
+          class="nav-item"
+          [class.active]="isActiveRoute('orders')"
+          (click)="navigateTo('orders')"
+        >
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"/>
+            <circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          <span>Pedidos</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

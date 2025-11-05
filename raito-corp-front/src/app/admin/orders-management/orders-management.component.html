@@ -1,0 +1,73 @@
+<div class="orders-management">
+  <div class="page-header">
+    <div>
+      <h2>Gestão de Pedidos</h2>
+      <p>Acompanhar e gerenciar todos os pedidos</p>
+    </div>
+  </div>
+
+  <div class="status-tabs">
+    <button class="tab active">Todos ({{orders.length}})</button>
+    <button class="tab">Pendentes</button>
+    <button class="tab">Processando</button>
+    <button class="tab">Enviados</button>
+    <button class="tab">Entregues</button>
+  </div>
+
+  <div class="orders-table">
+    <div class="table-header">
+      <span>Pedido</span>
+      <span>Cliente</span>
+      <span>E-mail</span>
+      <span>Itens</span>
+      <span>Total</span>
+      <span>Data</span>
+      <span>Status</span>
+      <span>Ações</span>
+    </div>
+    <div class="table-row" *ngFor="let order of orders">
+      <span class="order-id">{{order.id}}</span>
+      <span>{{order.cliente}}</span>
+      <span class="email">{{order.email}}</span>
+      <span>{{order.itens}}</span>
+      <span class="total">{{formatCurrency(order.total)}}</span>
+      <span>{{order.data}}</span>
+      <span>
+        <span class="badge" [class]="getStatusColor(order.status)">{{order.status}}</span>
+      </span>
+      <button class="btn-view" (click)="openOrderDetails(order)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()" *ngIf="selectedOrder">
+      <div class="modal-header">
+        <h3>Detalhes do Pedido</h3>
+        <button (click)="closeModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Pedido:</strong> {{selectedOrder.id}}</p>
+        <p><strong>Cliente:</strong> {{selectedOrder.cliente}}</p>
+        <p><strong>E-mail:</strong> {{selectedOrder.email}}</p>
+        <p><strong>Itens:</strong> {{selectedOrder.itens}}</p>
+        <p><strong>Total:</strong> {{formatCurrency(selectedOrder.total)}}</p>
+        <p><strong>Data:</strong> {{selectedOrder.data}}</p>
+        <div class="form-group">
+          <label>Atualizar Status</label>
+          <select [(ngModel)]="selectedOrder.status">
+            <option *ngFor="let status of statusOptions" [value]="status">{{status}}</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeModal()">Cancelar</button>
+        <button class="btn-save" (click)="updateOrderStatus()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
