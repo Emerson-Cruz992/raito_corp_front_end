@@ -1,63 +1,236 @@
-<header class="auth-header">
-  <div class="container">
-    <a routerLink="/" class="back-button">
+<div class="auth-container">
+  <div class="auth-card">
+    <!-- Logo e título -->
+    <div class="auth-header">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+      </div>
+      <h1>Raitô Corp</h1>
+      <p>Soluções de iluminação</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="auth-tabs">
+      <button
+        class="tab"
+        [class.active]="activeTab === 'login'"
+        (click)="switchTab('login')"
+        type="button">
+        Entrar
+      </button>
+      <button
+        class="tab"
+        [class.active]="activeTab === 'register'"
+        (click)="switchTab('register')"
+        type="button">
+        Criar Conta
+      </button>
+    </div>
+
+    <!-- Mensagem de erro -->
+    <div class="error-message" *ngIf="errorMessage">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      Voltar
-    </a>
-    <div class="header-content">
-      <h1>Entrar</h1>
-      <p>Acesse sua conta para finalizar a compra</p>
+      {{ errorMessage }}
     </div>
-  </div>
-</header>
 
-<section class="auth-content">
-  <div class="container">
-    <div class="auth-card">
-      <div class="brand-section">
-        <div class="logo-circle"></div>
-        <h2>Bem-vindo</h2>
-        <p>Faça login para continuar</p>
-      </div>
-
-      <form class="auth-form" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-          <label>E-mail</label>
-          <div class="input-wrapper">
-            <input type="email" [(ngModel)]="form.email" name="email" required placeholder="seu@email.com">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Senha</label>
-          <div class="input-wrapper">
-            <input type="password" [(ngModel)]="form.password" name="password" required placeholder="Sua senha">
-          </div>
-        </div>
-
-        <div class="form-checkbox">
-          <input type="checkbox" id="remember" [(ngModel)]="form.remember" name="remember">
-          <label for="remember">Manter conectado</label>
-        </div>
-
-        <button type="submit" class="submit-btn">Entrar</button>
-
-        <div class="form-footer">
-          <a href="#" class="link">Esqueci minha senha</a> • 
-          <a routerLink="/catalogo" class="link">Voltar ao catálogo</a>
-        </div>
-      </form>
-
-      <div class="security-features">
-        <div class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    <!-- Formulário de Login -->
+    <form *ngIf="activeTab === 'login'" (ngSubmit)="onLoginSubmit()" #loginFormRef="ngForm" class="auth-form">
+      <div class="form-group">
+        <label for="login-email">Email</label>
+        <div class="input-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="input-icon">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
           </svg>
-          <span>Seus dados estão protegidos com criptografia SSL</span>
+          <input
+            type="email"
+            id="login-email"
+            name="email"
+            [(ngModel)]="loginForm.email"
+            placeholder="seu@email.com"
+            required
+            [disabled]="isLoading">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="login-password">Senha</label>
+        <div class="input-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="input-icon">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="login-password"
+            name="password"
+            [(ngModel)]="loginForm.password"
+            placeholder="••••••••"
+            required
+            [disabled]="isLoading">
+        </div>
+      </div>
+
+      <div class="form-checkbox">
+        <input type="checkbox" id="remember" [(ngModel)]="loginForm.remember" name="remember">
+        <label for="remember">Manter conectado</label>
+      </div>
+
+      <button
+        type="submit"
+        class="submit-btn"
+        [disabled]="isLoading || !loginFormRef.form.valid">
+        <span *ngIf="!isLoading">Entrar</span>
+        <span *ngIf="isLoading">
+          <svg class="loading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          Entrando...
+        </span>
+      </button>
+
+      <p class="terms-text">
+        <a href="#" class="link">Esqueci minha senha</a>
+      </p>
+    </form>
+
+    <!-- Formulário de Registro -->
+    <form *ngIf="activeTab === 'register'" (ngSubmit)="onRegisterSubmit()" #registerFormRef="ngForm" class="auth-form">
+      <!-- Nome Completo -->
+      <div class="form-group">
+        <label for="nome">Nome Completo</label>
+        <div class="input-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="input-icon">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <input
+            type="text"
+            id="nome"
+            name="nome"
+            [(ngModel)]="registerForm.nome"
+            placeholder="João Silva"
+            required
+            [disabled]="isLoading">
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="register-email">Email</label>
+        <div class="input-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="input-icon">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <input
+            type="email"
+            id="register-email"
+            name="email"
+            [(ngModel)]="registerForm.email"
+            placeholder="seu@email.com"
+            required
+            [disabled]="isLoading">
+        </div>
+      </div>
+
+      <!-- Senha -->
+      <div class="form-group">
+        <label for="register-password">Senha</label>
+        <div class="input-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="input-icon">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="register-password"
+            name="password"
+            [(ngModel)]="registerForm.password"
+            placeholder="••••••••"
+            required
+            minlength="6"
+            [disabled]="isLoading">
+        </div>
+        <span class="help-text">Mínimo de 6 caracteres</span>
+      </div>
+
+      <!-- Confirmar Senha -->
+      <div class="form-group">
+        <label for="confirmPassword">Confirmar Senha</label>
+        <div class="input-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="input-icon">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <input
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            id="confirmPassword"
+            name="confirmPassword"
+            [(ngModel)]="registerForm.confirmPassword"
+            placeholder="••••••••"
+            required
+            [disabled]="isLoading">
+        </div>
+      </div>
+
+      <!-- Aceitar Termos -->
+      <div class="form-checkbox">
+        <input
+          type="checkbox"
+          id="acceptTerms"
+          [(ngModel)]="registerForm.acceptTerms"
+          name="acceptTerms"
+          required>
+        <label for="acceptTerms">
+          Aceito os <a routerLink="/termos" class="link">Termos de Uso</a> e
+          <a routerLink="/privacidade" class="link">Política de Privacidade</a>
+        </label>
+      </div>
+
+      <!-- Botão de submit -->
+      <button
+        type="submit"
+        class="submit-btn"
+        [disabled]="isLoading || !registerFormRef.form.valid">
+        <span *ngIf="!isLoading">Criar Conta</span>
+        <span *ngIf="isLoading">
+          <svg class="loading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          Criando conta...
+        </span>
+      </button>
+    </form>
+
+    <!-- Rodapé com ícones -->
+    <div class="auth-footer">
+      <div class="footer-icons">
+        <div class="footer-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <div class="footer-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+        </div>
+        <div class="footer-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
         </div>
       </div>
     </div>
   </div>
-</section>
+</div>

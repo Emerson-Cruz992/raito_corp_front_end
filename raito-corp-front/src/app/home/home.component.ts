@@ -66,8 +66,8 @@ export class HomeComponent {
   ];
 
   onSubmit() {
-    console.log('Formulário enviado:', this.contactForm);
-    // Aqui você pode adicionar a lógica para enviar o formulário
+    // TODO: Implementar envio de formulário de contato para o back-end
+    // ContactService.sendMessage(this.contactForm)
   }
 
   addFeaturedToCart(produto: any, index: number) {

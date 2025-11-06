@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ProductDetailComponent, ProductDetailData } from '../product-detail/product-detail.component';
+import { CartService } from '../shared/cart.service';
 
 interface Product {
   id: number;
@@ -178,6 +179,12 @@ export class CatalogComponent implements OnInit {
   filteredProducts: Product[] = [];
   currentProducts: Product[] = [];
 
+  // Feedback visual
+  addingToCart: { [productId: number]: boolean } = {};
+  showSuccessMessage: { [productId: number]: boolean } = {};
+
+  constructor(private cartService: CartService) {}
+
   ngOnInit() {
     this.filteredProducts = [...this.allProducts];
     this.currentProducts = [...this.allProducts];
@@ -308,5 +315,49 @@ export class CatalogComponent implements OnInit {
       isPromotion: Boolean(product.isPromotion),
       description: 'Produto de alta qualidade com garantia estendida e suporte especializado.'
     };
+  }
+
+  // Adicionar produto ao carrinho com feedback visual
+  addToCart(product: Product, event: Event) {
+    event.stopPropagation();
+
+    // Mostrar loading
+    this.addingToCart[product.id] = true;
+
+    // Simular delay de API (remover quando integrar com back-end)
+    setTimeout(() => {
+      // Adicionar ao carrinho
+      this.cartService.addItem(
+        {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image
+        },
+        1
+      );
+
+      // Remover loading e mostrar sucesso
+      this.addingToCart[product.id] = false;
+      this.showSuccessMessage[product.id] = true;
+
+      // Esconder mensagem de sucesso após 2 segundos
+      setTimeout(() => {
+        this.showSuccessMessage[product.id] = false;
+      }, 2000);
+    }, 300);
+  }
+
+  // Verificar se produto está no carrinho
+  isInCart(productId: number): boolean {
+    const items = this.cartService.getItems();
+    return items.some(item => item.id === productId);
+  }
+
+  // Obter quantidade do produto no carrinho
+  getCartQuantity(productId: number): number {
+    const items = this.cartService.getItems();
+    const item = items.find(i => i.id === productId);
+    return item?.qty || 0;
   }
 }

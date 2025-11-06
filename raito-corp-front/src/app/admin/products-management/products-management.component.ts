@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminDataService } from '../../shared/admin-data.service';
 import { Product } from '../../shared/models/admin.models';
 import { ProductModalComponent } from '../product-modal/product-modal.component';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-products-management',
@@ -12,20 +14,28 @@ import { ProductModalComponent } from '../product-modal/product-modal.component'
   templateUrl: './products-management.component.html',
   styleUrl: './products-management.component.scss'
 })
-export class ProductsManagementComponent implements OnInit {
+export class ProductsManagementComponent implements OnInit, OnDestroy {
   products: Product[] = [];
   searchTerm = '';
   isModalOpen = false;
   selectedProduct: Product | null = null;
   isDeleteModalOpen = false;
   productToDelete: Product | null = null;
+  private destroy$ = new Subject<void>();
 
   constructor(private adminDataService: AdminDataService) {}
 
   ngOnInit() {
-    this.adminDataService.getProducts().subscribe(products => {
-      this.products = products;
-    });
+    this.adminDataService.getProducts()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(products => {
+        this.products = products;
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   get filteredProducts() {

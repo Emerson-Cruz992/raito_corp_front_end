@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # Front-end Angular
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: raito-frontend
+    ports:
+      - "4200:80"
+    networks:
+      - raito-network
+    depends_on:
+      - backend
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+
+  # Back-end Java Spring (configuração de exemplo)
+  backend:
+    image: raito-backend:latest  # Substituir pela imagem do seu back-end
+    container_name: raito-backend
+    ports:
+      - "8080:8080"
+    networks:
+      - raito-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/raito_db
+      - SPRING_DATASOURCE_USERNAME=raito_user
+      - SPRING_DATASOURCE_PASSWORD=raito_password
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - JWT_EXPIRATION=86400000
+    depends_on:
+      - database
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Banco de dados PostgreSQL
+  database:
+    image: postgres:16-alpine
+    container_name: raito-database
+    ports:
+      - "5432:5432"
+    networks:
+      - raito-network
+    environment:
+      - POSTGRES_DB=raito_db
+      - POSTGRES_USER=raito_user
+      - POSTGRES_PASSWORD=raito_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U raito_user -d raito_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis para cache (opcional)
+  redis:
+    image: redis:7-alpine
+    container_name: raito-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - raito-network
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nginx como reverse proxy (opcional - para produção)
+  nginx:
+    image: nginx:alpine
+    container_name: raito-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - raito-network
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+networks:
+  raito-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local

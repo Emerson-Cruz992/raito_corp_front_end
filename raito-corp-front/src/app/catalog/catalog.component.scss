@@ -534,6 +534,8 @@ $accent: #2d3748;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
 
         svg {
           width: 16px;
@@ -541,10 +543,66 @@ $accent: #2d3748;
           stroke-width: 2;
         }
 
-        &:hover {
+        &:hover:not(:disabled) {
           background: $black;
           transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.7;
+        }
+
+        // Estado de loading
+        &.loading {
+          background: #555;
+
+          .loading-icon {
+            animation: spin 1s linear infinite;
+          }
+        }
+
+        // Estado de sucesso
+        &.success {
+          background: #10b981;
+
+          .success-icon {
+            animation: check 0.5s ease;
+          }
+        }
+
+        // Produto já no carrinho
+        &.in-cart:not(.loading):not(.success) {
+          background: #f59e0b;
+          border: 2px solid #d97706;
+
+          &:hover {
+            background: #d97706;
+          }
+        }
+
+        // Animação de loading
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        // Animação de check
+        @keyframes check {
+          0% {
+            transform: scale(0);
+          }
+          50% {
+            transform: scale(1.2);
+          }
+          100% {
+            transform: scale(1);
+          }
         }
       }
     }

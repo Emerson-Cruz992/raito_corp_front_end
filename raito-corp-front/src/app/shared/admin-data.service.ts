@@ -121,10 +121,10 @@ export class AdminDataService {
 
   private orders: Order[] = [
     { id: 'ORD-001', cliente: 'João Silva', email: 'joao@email.com', itens: 3, total: 789.70, data: '31/10/2025', status: 'Entregue' },
-    { id: 'ORD-002', cliente: 'Maria Santos', email: 'maria@email.com', itens: 3, total: 789.70, data: '31/11/2025', status: 'Enviado' },
-    { id: 'ORD-003', cliente: 'Pedro Oliveira', email: 'pedro@email.com', itens: 2, total: 519.80, data: '31/11/2025', status: 'Processando' },
-    { id: 'ORD-004', cliente: 'Ana Costa', email: 'ana@email.com', itens: 1, total: 329.90, data: '31/11/2025', status: 'Pendente' },
-    { id: 'ORD-005', cliente: 'Carlos Mendes', email: 'carlos@email.com', itens: 4, total: 1098.60, data: '31/11/2025', status: 'Enviado' },
+    { id: 'ORD-002', cliente: 'Maria Santos', email: 'maria@email.com', itens: 3, total: 789.70, data: '30/11/2025', status: 'Enviado' },
+    { id: 'ORD-003', cliente: 'Pedro Oliveira', email: 'pedro@email.com', itens: 2, total: 519.80, data: '29/11/2025', status: 'Processando' },
+    { id: 'ORD-004', cliente: 'Ana Costa', email: 'ana@email.com', itens: 1, total: 329.90, data: '28/11/2025', status: 'Pendente' },
+    { id: 'ORD-005', cliente: 'Carlos Mendes', email: 'carlos@email.com', itens: 4, total: 1098.60, data: '27/11/2025', status: 'Enviado' },
     { id: 'ORD-006', cliente: 'Juliana Lima', email: 'juliana@email.com', itens: 1, total: 329.90, data: '31/10/2025', status: 'Cancelado' },
     { id: 'ORD-007', cliente: 'Roberto Alves', email: 'roberto@email.com', itens: 4, total: 1098.60, data: '29/10/2025', status: 'Entregue' },
     { id: 'ORD-008', cliente: 'Fernanda Souza', email: 'fernanda@email.com', itens: 3, total: 879.70, data: '02/11/2025', status: 'Processando' }
