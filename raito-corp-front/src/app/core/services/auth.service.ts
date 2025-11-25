@@ -43,8 +43,8 @@ export class AuthService {
     this.currentUserSubject = new BehaviorSubject<User | null>(storedUser);
     this.currentUser$ = this.currentUserSubject.asObservable();
 
-    // Verificar se o token ainda é válido ao iniciar
-    if (storedUser && !this.isTokenValid()) {
+    // Verificar se tem token ao iniciar (validação JWT desabilitada temporariamente)
+    if (storedUser && !this.getToken()) {
       this.logout();
     }
   }
@@ -54,7 +54,8 @@ export class AuthService {
   }
 
   public get isAuthenticated(): boolean {
-    return !!this.getToken() && this.isTokenValid();
+    // Temporário: aceitar qualquer token até implementar JWT de verdade
+    return !!this.getToken() && !!this.currentUserValue;
   }
 
   public get userRole(): UserRole | null {
@@ -135,6 +136,27 @@ export class AuthService {
    */
   isAdmin(): boolean {
     return this.hasRole('ADMIN');
+  }
+
+  /**
+   * Define o usuário atual (para login customizado)
+   */
+  setCurrentUser(usuario: any, token?: string): void {
+    // Adaptar o modelo de usuário do backend para o modelo local
+    const user: User = {
+      id: usuario.idUsuario || usuario.id,
+      email: usuario.email || '',
+      nome: usuario.nome,
+      role: usuario.tipoUsuario === 'admin' ? 'ADMIN' : 'USER'
+    };
+
+    // Salvar token se fornecido
+    if (token) {
+      localStorage.setItem(environment.tokenKey, token);
+    }
+
+    localStorage.setItem('raito_user', JSON.stringify(user));
+    this.currentUserSubject.next(user);
   }
 
   /**

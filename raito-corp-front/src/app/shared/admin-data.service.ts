@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, forkJoin, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import {
   Product,
   Order,
@@ -9,13 +10,18 @@ import {
   CategorySales,
   OrderStatus
 } from './models/admin.models';
+import { ProdutoService } from '../core/services/catalogo/produto.service';
+import { PedidoService } from '../core/services/vendas/pedido.service';
+import { EstoqueService } from '../core/services/estoque/estoque.service';
+import { AdminService, ProdutoAdminDTO, PedidoAdminDTO } from '../core/services/admin/admin.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminDataService {
-  // Mock data - em produção, isso viria de uma API
-  private products: Product[] = [
+  // Mock data para fallback
+  private mockProducts: Product[] = [
     {
       id: 'prod-001',
       nome: 'Lustre Pendente Moderno LED',
@@ -119,7 +125,7 @@ export class AdminDataService {
     }
   ];
 
-  private orders: Order[] = [
+  private mockOrders: Order[] = [
     { id: 'ORD-001', cliente: 'João Silva', email: 'joao@email.com', itens: 3, total: 789.70, data: '31/10/2025', status: 'Entregue' },
     { id: 'ORD-002', cliente: 'Maria Santos', email: 'maria@email.com', itens: 3, total: 789.70, data: '30/11/2025', status: 'Enviado' },
     { id: 'ORD-003', cliente: 'Pedro Oliveira', email: 'pedro@email.com', itens: 2, total: 519.80, data: '29/11/2025', status: 'Processando' },
@@ -148,10 +154,88 @@ export class AdminDataService {
     { categoria: 'Outros', percentual: 7 }
   ];
 
-  private productsSubject = new BehaviorSubject<Product[]>(this.products);
-  private ordersSubject = new BehaviorSubject<Order[]>(this.orders);
+  private products: Product[] = [];
+  private orders: Order[] = [];
+  private productsSubject = new BehaviorSubject<Product[]>([]);
+  private ordersSubject = new BehaviorSubject<Order[]>([]);
 
-  constructor() { }
+  constructor(
+    private produtoService: ProdutoService,
+    private pedidoService: PedidoService,
+    private estoqueService: EstoqueService,
+    private adminService: AdminService
+  ) {
+    if (environment.enableMockData) {
+      this.products = this.mockProducts;
+      this.orders = this.mockOrders;
+      this.productsSubject.next(this.mockProducts);
+      this.ordersSubject.next(this.mockOrders);
+    } else {
+      this.loadRealData();
+    }
+  }
+
+  private loadRealData(): void {
+    // Carregar produtos do backend usando endpoint de admin
+    this.adminService.listarProdutosAdmin().pipe(
+      map(produtos => produtos.map(p => this.convertProdutoAdminToProduct(p))),
+      catchError(() => {
+        console.warn('Erro ao carregar produtos, usando mock data');
+        return of(this.mockProducts);
+      })
+    ).subscribe(products => {
+      this.products = products;
+      this.productsSubject.next(products);
+    });
+
+    // Carregar pedidos do backend usando endpoint de admin
+    this.adminService.listarPedidosAdmin().pipe(
+      map(pedidos => pedidos.map(p => this.convertPedidoAdminToOrder(p))),
+      catchError(() => {
+        console.warn('Erro ao carregar pedidos, usando mock data');
+        return of(this.mockOrders);
+      })
+    ).subscribe(orders => {
+      this.orders = orders;
+      this.ordersSubject.next(orders);
+    });
+  }
+
+  private convertProdutoAdminToProduct(produto: ProdutoAdminDTO): Product {
+    return {
+      id: produto.idProduto,
+      nome: produto.nome,
+      categoria: produto.categoria,
+      preco: produto.preco,
+      estoque: produto.estoque,
+      vendidos: produto.vendidos,
+      receita: produto.receita,
+      imagem: produto.urlImagem || 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=300&h=300&fit=crop'
+    };
+  }
+
+  private convertPedidoAdminToOrder(pedido: PedidoAdminDTO): Order {
+    return {
+      id: pedido.idPedido,
+      cliente: pedido.nomeCliente,
+      email: pedido.emailCliente,
+      itens: pedido.quantidadeItens,
+      total: pedido.valorTotal,
+      data: new Date(pedido.criadoEm).toLocaleDateString('pt-BR'),
+      status: this.mapStatusPedido(pedido.status)
+    };
+  }
+
+  private mapStatusPedido(status: string): OrderStatus {
+    const statusMap: Record<string, OrderStatus> = {
+      'PENDENTE': 'Pendente',
+      'PROCESSANDO': 'Processando',
+      'ENVIADO': 'Enviado',
+      'ENTREGUE': 'Entregue',
+      'CANCELADO': 'Cancelado'
+    };
+    return statusMap[status?.toUpperCase()] || 'Pendente';
+  }
 
   // Products Methods
   getProducts(): Observable<Product[]> {

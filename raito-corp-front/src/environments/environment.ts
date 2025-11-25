@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.raitocorp.com/api',
+  apiUrl: '/api',
   apiTimeout: 30000,
   tokenKey: 'raito_auth_token',
   refreshTokenKey: 'raito_refresh_token',
