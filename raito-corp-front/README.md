@@ -1,59 +1,26 @@
-# RaitoCorpFront
+# Raito Corp - Aplicação Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.12.
+Bem-vindo ao repositório da `raito-corp-front`, uma aplicação web moderna desenvolvida com Angular, projetada para oferecer uma experiência rica e interativa, incluindo a visualização de produtos em 3D.
 
-## Development server
+##  sobre o projeto
 
-To start a local development server, run:
+Esta aplicação serve como a interface principal para os clientes da Raito Corp. Ela permite que os usuários naveguem por um catálogo de produtos, visualizem modelos 3D interativos, gerenciem seus carrinhos de compras e muito mais. O projeto foi construído com foco em performance, escalabilidade e manutenibilidade, utilizando as tecnologias mais recentes do ecossistema Angular.
 
-```bash
-ng serve
-```
+## Documentação
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Para ajudar no desenvolvimento e na compreensão do projeto, criamos uma série de documentos que detalham sua arquitetura, funcionamento e principais processos.
 
-## Code scaffolding
+- **[Documentação de Arquitetura](./ARCHITECTURE.md)**: Uma visão aprofundada da estrutura do projeto, tecnologias utilizadas e decisões arquiteturais.
+- **[Guia do Desenvolvedor](./DOCUMENTATION.md)**: Instruções detalhadas sobre como configurar o ambiente de desenvolvimento, executar testes e fazer o deploy da aplicação.
+- **[Perguntas Frequentes (FAQ)](./FAQ.md)**: Respostas para as dúvidas mais comuns sobre o projeto.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Primeiros Passos
 
-```bash
-ng generate component component-name
-```
+Para começar a desenvolver, siga as instruções detalhadas no nosso **[Guia do Desenvolvedor](./DOCUMENTATION.md)**.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Tecnologias Utilizadas
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **[Angular](https://angular.dev/)**: Framework principal para a construção da interface.
+- **[Three.js](https://threejs.org/)** e **[Babylon.js](https://www.babylonjs.com/)**: Bibliotecas para renderização e visualização de modelos 3D.
+- **[Docker](https://www.docker.com/)**: Para containerização e implantação da aplicação.
+- **[Nginx](https://www.nginx.com/)**: Servidor web para servir os arquivos estáticos da aplicação em produção.
