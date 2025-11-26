@@ -19,7 +19,22 @@ export class DashboardComponent implements OnInit {
   constructor(private adminDataService: AdminDataService) {}
 
   ngOnInit() {
-    this.loadDashboardData();
+    // Forçar reload dos dados ao entrar no dashboard
+    this.adminDataService.reloadData();
+
+    // Aguardar um pouco e então carregar os dados
+    setTimeout(() => {
+      this.loadDashboardData();
+    }, 500);
+
+    // Se inscrever para atualizações de produtos e pedidos
+    this.adminDataService.getProducts().subscribe(() => {
+      this.loadDashboardData();
+    });
+
+    this.adminDataService.getOrders().subscribe(() => {
+      this.loadDashboardData();
+    });
   }
 
   loadDashboardData() {
@@ -34,12 +49,21 @@ export class DashboardComponent implements OnInit {
   }
 
   getMaxSalesValue(): number {
-    return Math.max(...this.salesByMonth.map(s => s.receita));
+    if (!this.salesByMonth || this.salesByMonth.length === 0) {
+      return 1;
+    }
+    const max = Math.max(...this.salesByMonth.map(s => s.receita));
+    return max > 0 ? max : 1;
   }
 
   getSalesBarHeight(receita: number): number {
+    if (!receita || receita === 0) {
+      return 0;
+    }
     const max = this.getMaxSalesValue();
-    return (receita / max) * 100;
+    const percentage = (receita / max) * 100;
+    // Garantir altura mínima de 10% para valores muito pequenos serem visíveis
+    return Math.max(percentage, 10);
   }
 
   getCategoryColor(index: number): string {

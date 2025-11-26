@@ -29,10 +29,10 @@ export class ProdutoService {
 
   /**
    * Cria um novo produto
-   * API: POST /api/produtos/criar
+   * API: POST /api/produtos
    */
   criarProduto(produto: CriarProdutoDTO): Observable<Produto> {
-    return this.api.post<Produto>(`${this.endpoint}/criar`, produto);
+    return this.api.post<Produto>(this.endpoint, produto);
   }
 
   /**
@@ -49,5 +49,13 @@ export class ProdutoService {
    */
   deletarProduto(id: string): Observable<void> {
     return this.api.delete<void>(`${this.endpoint}/${id}`);
+  }
+
+  /**
+   * Associa uma categoria a um produto pelo nome da categoria
+   * API: POST /api/produtos/{idProduto}/categoria-nome/{nomeCategoria}
+   */
+  associarCategoriaPorNome(idProduto: string, nomeCategoria: string): Observable<string> {
+    return this.api.post<string>(`${this.endpoint}/${idProduto}/categoria-nome/${nomeCategoria}`, {});
   }
 }

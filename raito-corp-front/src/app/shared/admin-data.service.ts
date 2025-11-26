@@ -179,9 +179,9 @@ export class AdminDataService {
     // Carregar produtos do backend usando endpoint de admin
     this.adminService.listarProdutosAdmin().pipe(
       map(produtos => produtos.map(p => this.convertProdutoAdminToProduct(p))),
-      catchError(() => {
-        console.warn('Erro ao carregar produtos, usando mock data');
-        return of(this.mockProducts);
+      catchError((err) => {
+        console.warn('Erro ao carregar produtos:', err);
+        return of([]);
       })
     ).subscribe(products => {
       this.products = products;
@@ -191,14 +191,19 @@ export class AdminDataService {
     // Carregar pedidos do backend usando endpoint de admin
     this.adminService.listarPedidosAdmin().pipe(
       map(pedidos => pedidos.map(p => this.convertPedidoAdminToOrder(p))),
-      catchError(() => {
-        console.warn('Erro ao carregar pedidos, usando mock data');
-        return of(this.mockOrders);
+      catchError((err) => {
+        console.warn('Erro ao carregar pedidos:', err);
+        return of([]);
       })
     ).subscribe(orders => {
       this.orders = orders;
       this.ordersSubject.next(orders);
     });
+  }
+
+  // Método público para forçar reload dos dados
+  reloadData(): void {
+    this.loadRealData();
   }
 
   private convertProdutoAdminToProduct(produto: ProdutoAdminDTO): Product {
@@ -247,21 +252,87 @@ export class AdminDataService {
   }
 
   addProduct(product: Product): void {
-    this.products.push(product);
-    this.productsSubject.next([...this.products]);
+    // Criar produto no backend
+    const produtoBackend = {
+      nome: product.nome,
+      descricao: product.descricao || product.nome,
+      preco: product.preco,
+      ativo: true
+    };
+
+    this.produtoService.criarProduto(produtoBackend).subscribe({
+      next: (novoProduto: any) => {
+        // Associar categoria se fornecida
+        if (product.categoria) {
+          this.produtoService.associarCategoriaPorNome(novoProduto.id, product.categoria).subscribe({
+            error: (err: any) => console.error('Erro ao associar categoria:', err)
+          });
+        }
+
+        // Criar estoque para o produto se fornecido
+        if (product.estoque && product.estoque > 0) {
+          this.estoqueService.adicionarEstoque(novoProduto.id, product.estoque).subscribe({
+            error: (err: any) => console.error('Erro ao criar estoque:', err)
+          });
+        }
+        // Recarregar dados
+        this.loadRealData();
+      },
+      error: (error: any) => {
+        console.error('Erro ao criar produto:', error);
+      }
+    });
   }
 
   updateProduct(id: string, updates: Partial<Product>): void {
-    const index = this.products.findIndex(p => p.id === id);
-    if (index !== -1) {
-      this.products[index] = { ...this.products[index], ...updates };
-      this.productsSubject.next([...this.products]);
-    }
+    // Atualizar produto no backend
+    const produtoBackend = {
+      nome: updates.nome,
+      descricao: updates.descricao || updates.nome || 'Produto',
+      preco: updates.preco,
+      ativo: true
+    };
+
+    this.produtoService.atualizarProduto(id, produtoBackend).subscribe({
+      next: () => {
+        // Associar/atualizar categoria se fornecida
+        if (updates.categoria) {
+          this.produtoService.associarCategoriaPorNome(id, updates.categoria).subscribe({
+            error: (err: any) => console.error('Erro ao associar categoria:', err)
+          });
+        }
+
+        // Atualizar estoque se necessário
+        if (updates.estoque !== undefined) {
+          this.estoqueService.atualizarEstoque(id, updates.estoque!).subscribe({
+            error: (err: any) => {
+              // Se falhar, tentar adicionar estoque
+              this.estoqueService.adicionarEstoque(id, updates.estoque!).subscribe({
+                error: (err2: any) => console.error('Erro ao criar/atualizar estoque:', err2)
+              });
+            }
+          });
+        }
+        // Recarregar dados
+        this.loadRealData();
+      },
+      error: (error: any) => {
+        console.error('Erro ao atualizar produto:', error);
+      }
+    });
   }
 
   deleteProduct(id: string): void {
-    this.products = this.products.filter(p => p.id !== id);
-    this.productsSubject.next([...this.products]);
+    // Excluir produto no backend
+    this.produtoService.deletarProduto(id).subscribe({
+      next: () => {
+        // Recarregar dados
+        this.loadRealData();
+      },
+      error: (error: any) => {
+        console.error('Erro ao excluir produto:', error);
+      }
+    });
   }
 
   // Orders Methods
@@ -318,11 +389,64 @@ export class AdminDataService {
 
   // Sales Data
   getSalesByMonth(): SalesData[] {
-    return this.salesByMonth;
+    // Calcular vendas por mês a partir dos pedidos reais
+    const salesByMonth: { [key: string]: { pedidos: number, receita: number } } = {};
+
+    this.orders.forEach(order => {
+      const date = new Date(order.data.split('/').reverse().join('-'));
+      const monthKey = date.toLocaleString('pt-BR', { month: 'short' });
+      const monthLabel = monthKey.charAt(0).toUpperCase() + monthKey.slice(1, 3);
+
+      if (!salesByMonth[monthLabel]) {
+        salesByMonth[monthLabel] = { pedidos: 0, receita: 0 };
+      }
+
+      salesByMonth[monthLabel].pedidos++;
+      salesByMonth[monthLabel].receita += order.total;
+    });
+
+    // Converter para array ordenado pelos últimos 7 meses
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const currentMonth = new Date().getMonth();
+    const last7Months = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const monthIndex = (currentMonth - i + 12) % 12;
+      const monthLabel = months[monthIndex];
+      last7Months.push({
+        mes: monthLabel,
+        pedidos: salesByMonth[monthLabel]?.pedidos || 0,
+        receita: salesByMonth[monthLabel]?.receita || 0
+      });
+    }
+
+    return last7Months;
   }
 
   getCategorySales(): CategorySales[] {
-    return this.categoryDistribution;
+    // Calcular vendas por categoria a partir dos produtos reais
+    const salesByCategory: { [key: string]: number } = {};
+    let totalReceita = 0;
+
+    this.products.forEach(product => {
+      if (!salesByCategory[product.categoria]) {
+        salesByCategory[product.categoria] = 0;
+      }
+      salesByCategory[product.categoria] += product.receita;
+      totalReceita += product.receita;
+    });
+
+    // Converter para percentual
+    const categorySales: CategorySales[] = Object.entries(salesByCategory)
+      .map(([categoria, receita]) => ({
+        categoria,
+        percentual: totalReceita > 0 ? Math.round((receita / totalReceita) * 100) : 0
+      }))
+      .filter(item => item.percentual > 0)
+      .sort((a, b) => b.percentual - a.percentual);
+
+    // Retornar array vazio se não houver dados, não usar mock
+    return categorySales;
   }
 
   // Top Products

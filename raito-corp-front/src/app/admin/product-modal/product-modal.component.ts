@@ -22,7 +22,8 @@ export class ProductModalComponent implements OnInit {
     preco: 0,
     estoque: 0,
     vendidos: 0,
-    receita: 0
+    receita: 0,
+    descricao: ''
   };
 
   precoDisplay: string = '';
@@ -71,7 +72,8 @@ export class ProductModalComponent implements OnInit {
         preco: this.formData.preco,
         estoque: this.formData.estoque || 0,
         vendidos: this.product?.vendidos || 0,
-        receita: this.product?.receita || 0
+        receita: this.product?.receita || 0,
+        descricao: this.formData.descricao || ''
       };
       this.save.emit(productToSave);
     }
