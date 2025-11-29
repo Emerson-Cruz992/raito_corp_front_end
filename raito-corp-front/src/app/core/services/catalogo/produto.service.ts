@@ -58,4 +58,30 @@ export class ProdutoService {
   associarCategoriaPorNome(idProduto: string, nomeCategoria: string): Observable<string> {
     return this.api.post<string>(`${this.endpoint}/${idProduto}/categoria-nome/${nomeCategoria}`, {});
   }
+
+  /**
+   * Marca ou desmarca um produto como destaque
+   * API: PATCH /api/produtos/{idProduto}
+   */
+  marcarComoDestaque(idProduto: string, emDestaque: boolean): Observable<Produto> {
+    return this.api.patch<Produto>(`${this.endpoint}/${idProduto}`, { emDestaque });
+  }
+
+  /**
+   * Lista produtos em destaque
+   * API: GET /api/produtos?emDestaque=true
+   */
+  listarProdutosEmDestaque(): Observable<Produto[]> {
+    return this.api.get<Produto[]>(`${this.endpoint}`, { emDestaque: true });
+  }
+
+  /**
+   * Upload de imagem do produto
+   * API: POST /api/produtos/{idProduto}/imagem
+   */
+  uploadImagem(idProduto: string, imagem: File): Observable<Produto> {
+    const formData = new FormData();
+    formData.append('imagem', imagem);
+    return this.api.post<Produto>(`${this.endpoint}/${idProduto}/imagem`, formData);
+  }
 }

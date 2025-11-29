@@ -8,6 +8,8 @@ export interface Produto {
   descricao?: string;
   preco: number;
   ativo: boolean;
+  emDestaque?: boolean;
+  imagemUrl?: string;
   criadoEm?: Date;
 }
 
@@ -19,6 +21,7 @@ export interface CriarProdutoDTO {
   descricao?: string;
   preco: number;
   ativo?: boolean;
+  emDestaque?: boolean;
 }
 
 /**
@@ -29,4 +32,5 @@ export interface AtualizarProdutoDTO {
   descricao?: string;
   preco?: number;
   ativo?: boolean;
+  emDestaque?: boolean;
 }

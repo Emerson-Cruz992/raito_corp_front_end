@@ -12,6 +12,8 @@ export interface ProdutoAdminDTO {
   vendidos: number;
   receita: number;
   urlImagem: string;
+  emDestaque: boolean;
+  descricao: string;
 }
 
 export interface PedidoAdminDTO {

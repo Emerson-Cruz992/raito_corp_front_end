@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 export interface CartItem {
   id: number;
@@ -13,6 +14,8 @@ const STORAGE_KEY = 'rc_cart_v1';
 @Injectable({ providedIn: 'root' })
 export class CartService {
   private items: CartItem[] = [];
+  private itemsSubject = new BehaviorSubject<CartItem[]>([]);
+  public items$: Observable<CartItem[]> = this.itemsSubject.asObservable();
 
   constructor() {
     this.load();
@@ -20,6 +23,7 @@ export class CartService {
 
   private save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.items));
+    this.itemsSubject.next([...this.items]);
   }
 
   private load() {
@@ -29,6 +33,7 @@ export class CartService {
     } catch {
       this.items = [];
     }
+    this.itemsSubject.next([...this.items]);
   }
 
   getItems(): CartItem[] {

@@ -215,7 +215,9 @@ export class AdminDataService {
       estoque: produto.estoque,
       vendidos: produto.vendidos,
       receita: produto.receita,
-      imagem: produto.urlImagem || 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=300&h=300&fit=crop'
+      imagem: produto.urlImagem || 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=300&h=300&fit=crop',
+      emDestaque: produto.emDestaque,
+      descricao: produto.descricao
     };
   }
 

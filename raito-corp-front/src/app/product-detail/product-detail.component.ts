@@ -25,10 +25,17 @@ export class ProductDetailComponent {
   @Input() open = false;
   @Input() product?: ProductDetailData;
   @Output() closed = new EventEmitter<void>();
+  @Output() addToCart = new EventEmitter<ProductDetailData>();
 
   onBackdropClick(e: MouseEvent) {
     if ((e.target as HTMLElement).classList.contains('modal-backdrop')) {
       this.closed.emit();
+    }
+  }
+
+  onAddToCart() {
+    if (this.product) {
+      this.addToCart.emit(this.product);
     }
   }
 }

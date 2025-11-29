@@ -20,10 +20,10 @@ export class CredencialService {
 
   /**
    * Realiza login
-   * API: POST /api/credenciais/login?email=X&senha=Y
+   * API: POST /api/credenciais/login (body: {email, senha})
    */
   login(email: string, senha: string): Observable<LoginResponse> {
-    return this.api.post<LoginResponse>(`${this.endpoint}/login?email=${encodeURIComponent(email)}&senha=${encodeURIComponent(senha)}`, {});
+    return this.api.post<LoginResponse>(`${this.endpoint}/login`, { email, senha });
   }
 
   /**

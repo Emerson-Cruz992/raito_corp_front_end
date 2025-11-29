@@ -158,21 +158,69 @@ export class LoginComponent implements OnInit {
 
     this.isLoading = true;
 
-    // TODO: Implementar registro com back-end
-    setTimeout(() => {
-      this.isLoading = false;
-      // Após criar conta, mudar para tab de login
-      this.activeTab = 'login';
-      this.errorMessage = '';
-      // Limpar formulário de registro
-      this.registerForm = {
-        nome: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        acceptTerms: false
-      };
-    }, 1500);
+    // Primeiro, criar o usuário
+    const nomeCompleto = this.registerForm.nome.trim();
+    const partesNome = nomeCompleto.split(' ');
+    const nome = partesNome[0];
+    const sobrenome = partesNome.slice(1).join(' ') || '';
+
+    this.usuarioService.criarUsuario({
+      nome: nome,
+      sobrenome: sobrenome,
+      tipoUsuario: 'cliente'
+    }).subscribe({
+      next: (usuario) => {
+        // Depois, criar as credenciais do usuário
+        this.credencialService.criarCredencial({
+          idUsuario: usuario.idUsuario,
+          email: this.registerForm.email,
+          senhaHash: this.registerForm.password
+        }).subscribe({
+          next: (credencial) => {
+            console.log('Cadastro realizado com sucesso!', { usuario, credencial });
+            this.isLoading = false;
+
+            // Fazer login automático após cadastro
+            this.credencialService.login(this.registerForm.email, this.registerForm.password).subscribe({
+              next: (loginResponse) => {
+                // Salvar dados do usuário no AuthService
+                this.authService.setCurrentUser(usuario, loginResponse.token);
+
+                // Redirecionar para home
+                this.router.navigate(['/']);
+              },
+              error: (error) => {
+                console.error('Erro ao fazer login automático:', error);
+                // Mesmo com erro no login, mostrar sucesso e pedir para fazer login manual
+                this.activeTab = 'login';
+                this.errorMessage = 'Conta criada com sucesso! Faça login para continuar.';
+                this.registerForm = {
+                  nome: '',
+                  email: '',
+                  password: '',
+                  confirmPassword: '',
+                  acceptTerms: false
+                };
+              }
+            });
+          },
+          error: (error) => {
+            console.error('Erro ao criar credenciais:', error);
+            this.isLoading = false;
+            if (error.status === 409 || error.error?.message?.includes('já existe')) {
+              this.errorMessage = 'Este email já está cadastrado';
+            } else {
+              this.errorMessage = 'Erro ao criar credenciais. Tente novamente.';
+            }
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Erro ao criar usuário:', error);
+        this.isLoading = false;
+        this.errorMessage = 'Erro ao criar usuário. Tente novamente.';
+      }
+    });
   }
 
   private isValidEmail(email: string): boolean {
