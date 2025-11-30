@@ -5,6 +5,7 @@ import { AdminDataService } from '../../shared/admin-data.service';
 import { Product } from '../../shared/models/admin.models';
 import { ProductModalComponent } from '../product-modal/product-modal.component';
 import { ProdutoService } from '../../core/services/catalogo/produto.service';
+import { EstoqueService } from '../../core/services/estoque/estoque.service';
 import { Produto, CriarProdutoDTO, AtualizarProdutoDTO } from '../../shared/models';
 import { Subject } from 'rxjs';
 import { takeUntil, switchMap } from 'rxjs/operators';
@@ -30,7 +31,8 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
 
   constructor(
     private adminDataService: AdminDataService,
-    private produtoService: ProdutoService
+    private produtoService: ProdutoService,
+    private estoqueService: EstoqueService
   ) {}
 
   ngOnInit() {
@@ -88,19 +90,33 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
       this.produtoService.atualizarProduto(idProduto, updateDTO)
         .pipe(
           switchMap((produtoAtualizado) => {
+            const promises: Promise<any>[] = [];
+
             // Se houver imagem selecionada, fazer upload
             const imageFile = this.productModal?.getSelectedImageFile();
             if (imageFile) {
-              return this.produtoService.uploadImagem(produtoAtualizado.id, imageFile);
+              promises.push(this.produtoService.uploadImagem(produtoAtualizado.id, imageFile).toPromise());
             }
-            return [produtoAtualizado];
-          }),
-          switchMap((produtoComImagem) => {
+
+            // Atualizar categoria se fornecida
+            if (product.categoria) {
+              promises.push(this.produtoService.associarCategoriaPorNome(produtoAtualizado.id, product.categoria).toPromise());
+            }
+
             // Atualizar campo emDestaque se necessário
             if (product.emDestaque !== undefined) {
-              return this.produtoService.marcarComoDestaque(produtoComImagem.id, product.emDestaque);
+              promises.push(this.produtoService.marcarComoDestaque(produtoAtualizado.id, product.emDestaque).toPromise());
             }
-            return [produtoComImagem];
+
+            // Atualizar estoque se fornecido
+            if (product.estoque !== undefined && product.estoque !== this.selectedProduct?.estoque) {
+              promises.push(
+                this.estoqueService.atualizarEstoque(produtoAtualizado.id, product.estoque).toPromise()
+                  .catch(() => this.estoqueService.adicionarEstoque(produtoAtualizado.id, product.estoque).toPromise())
+              );
+            }
+
+            return Promise.all(promises).then(() => produtoAtualizado);
           }),
           takeUntil(this.destroy$)
         )
@@ -109,7 +125,11 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
             this.isSaving = false;
             this.closeModal();
             // Recarregar lista de produtos
-            this.loadProducts();
+            this.adminDataService.reloadData();
+            // Aguardar um pouco para o backend processar e então recarregar
+            setTimeout(() => {
+              this.loadProducts();
+            }, 500);
             alert('Produto atualizado com sucesso!');
           },
           error: (error) => {

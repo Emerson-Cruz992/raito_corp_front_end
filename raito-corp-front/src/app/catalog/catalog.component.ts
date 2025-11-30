@@ -17,6 +17,7 @@ interface Product {
   badges: string[];
   isNew: boolean;
   isPromotion: boolean;
+  description?: string;
 }
 
 interface Category {
@@ -264,7 +265,7 @@ export class CatalogComponent implements OnInit {
       badges: product.badges,
       isNew: Boolean(product.isNew),
       isPromotion: Boolean(product.isPromotion),
-      description: (product as any).description || 'Produto de alta qualidade com garantia estendida e suporte especializado.'
+      description: product.description || 'Produto de alta qualidade com garantia estendida e suporte especializado.'
     };
   }
 
