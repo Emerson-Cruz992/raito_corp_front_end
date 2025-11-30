@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 export interface CartItem {
-  id: number;
+  id: string;  // UUID do produto
   name: string;
   price: number;
   image: string;
@@ -58,14 +58,14 @@ export class CartService {
     this.save();
   }
 
-  updateQty(id: number, qty: number) {
+  updateQty(id: string, qty: number) {
     const it = this.items.find(i => i.id === id);
     if (!it) return;
     it.qty = Math.max(1, qty);
     this.save();
   }
 
-  removeItem(id: number) {
+  removeItem(id: string) {
     this.items = this.items.filter(i => i.id !== id);
     this.save();
   }

@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface ProductDetailData {
-  id: number;
+  id: string;  // UUID do produto
   name: string;
   category: string;
   price: number;

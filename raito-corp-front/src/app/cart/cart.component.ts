@@ -3,6 +3,13 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CartService, CartItem } from '../shared/cart.service';
+import { AuthService } from '../core/services/auth.service';
+import { EnderecoService } from '../core/services/cadastro/endereco.service';
+import { CarrinhoService } from '../core/services/vendas/carrinho.service';
+import { PedidoService } from '../core/services/vendas/pedido.service';
+import { AdminDataService } from '../shared/admin-data.service';
+import { NotificationService } from '../shared/notification.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-cart',
@@ -14,6 +21,7 @@ import { CartService, CartItem } from '../shared/cart.service';
 export class CartComponent implements OnInit {
   isAuthenticated = false;
   showAddressForm = false;
+  isProcessing = false;
 
   // Dados de endereço
   endereco = {
@@ -28,20 +36,21 @@ export class CartComponent implements OnInit {
 
   constructor(
     private cart: CartService,
-    private router: Router
+    private router: Router,
+    private authService: AuthService,
+    private enderecoService: EnderecoService,
+    private carrinhoService: CarrinhoService,
+    private pedidoService: PedidoService,
+    private adminDataService: AdminDataService,
+    private notification: NotificationService
   ) {}
 
   ngOnInit() {
-    // Verificar se o usuário está autenticado
     this.checkAuthentication();
   }
 
   checkAuthentication() {
-    const token = localStorage.getItem('raito_auth_token');
-    console.log('Token encontrado:', token ? 'Sim' : 'Não');
-    console.log('Token value:', token);
-    this.isAuthenticated = !!token;
-    console.log('isAuthenticated:', this.isAuthenticated);
+    this.isAuthenticated = this.authService.isAuthenticated;
   }
 
   get items(): CartItem[] { return this.cart.getItems(); }
@@ -54,36 +63,106 @@ export class CartComponent implements OnInit {
   inc(item: CartItem) { this.cart.updateQty(item.id, item.qty + 1); }
   dec(item: CartItem) { this.cart.updateQty(item.id, Math.max(1, item.qty - 1)); }
   remove(item: CartItem) { this.cart.removeItem(item.id); }
+
   clear() {
-    if (confirm('Tem certeza que deseja limpar o carrinho?')) {
-      this.cart.clear();
-    }
+    this.notification.confirm(
+      'Tem certeza?',
+      'Deseja realmente limpar todos os itens do carrinho?',
+      () => {
+        this.cart.clear();
+        this.notification.success('Carrinho limpo', 'Todos os itens foram removidos do carrinho.');
+      }
+    );
   }
 
   proceedToCheckout() {
     if (!this.isAuthenticated) {
-      // Redirecionar para login
       this.router.navigate(['/login'], { queryParams: { returnUrl: '/cart' } });
     } else {
-      // Mostrar formulário de endereço
       this.showAddressForm = true;
     }
   }
 
   async finalizarPedido() {
     if (!this.validarEndereco()) {
-      alert('Por favor, preencha todos os campos obrigatórios do endereço.');
+      this.notification.warning(
+        'Dados incompletos',
+        'Por favor, preencha todos os campos obrigatórios do endereço.'
+      );
       return;
     }
 
-    // Aqui você implementaria a lógica de finalização do pedido
-    console.log('Finalizando pedido com endereço:', this.endereco);
-    console.log('Itens:', this.items);
-    console.log('Total:', this.totalComFrete);
+    if (this.isProcessing) {
+      return;
+    }
 
-    alert('Pedido realizado com sucesso! (Implementação em desenvolvimento)');
-    this.cart.clear();
-    this.router.navigate(['/']);
+    this.isProcessing = true;
+
+    try {
+      const user = this.authService.currentUserValue;
+      if (!user) {
+        this.notification.error('Erro', 'Usuário não autenticado');
+        this.isProcessing = false;
+        return;
+      }
+
+      const idCliente = user.id.toString();
+
+      // 1. Criar endereço
+      const novoEndereco = await firstValueFrom(this.enderecoService.criarEndereco({
+        idCliente: idCliente,
+        cep: this.endereco.cep,
+        rua: this.endereco.logradouro,
+        numero: this.endereco.numero,
+        complemento: this.endereco.complemento || undefined,
+        bairro: this.endereco.bairro,
+        cidade: this.endereco.cidade,
+        estado: this.endereco.estado,
+        enderecoPrincipal: false
+      }));
+
+      // 2. Criar carrinho no backend
+      const carrinho = await firstValueFrom(this.carrinhoService.criarCarrinho(idCliente));
+
+      // 3. Adicionar itens ao carrinho
+      for (const item of this.items) {
+        await firstValueFrom(this.carrinhoService.adicionarItem(
+          carrinho.idCarrinho,
+          item.id.toString(),
+          item.qty,
+          item.price
+        ));
+      }
+
+      // 4. Finalizar pedido
+      await firstValueFrom(this.pedidoService.finalizarPedido(
+        idCliente,
+        carrinho.idCarrinho,
+        novoEndereco.idEndereco
+      ));
+
+      // Recarregar dados admin
+      this.adminDataService.reloadData();
+
+      // Limpar carrinho local
+      this.cart.clear();
+
+      this.notification.success(
+        'Pedido realizado!',
+        'Seu pedido foi finalizado com sucesso e está sendo processado.'
+      );
+
+      setTimeout(() => {
+        this.router.navigate(['/']);
+      }, 2000);
+    } catch (error: any) {
+      this.notification.error(
+        'Erro ao finalizar pedido',
+        error.message || 'Ocorreu um erro ao processar seu pedido. Tente novamente.'
+      );
+    } finally {
+      this.isProcessing = false;
+    }
   }
 
   validarEndereco(): boolean {
@@ -108,9 +187,13 @@ export class CartComponent implements OnInit {
             this.endereco.bairro = data.bairro;
             this.endereco.cidade = data.localidade;
             this.endereco.estado = data.uf;
+          } else {
+            this.notification.warning('CEP não encontrado', 'O CEP informado não foi encontrado.');
           }
         })
-        .catch(err => console.error('Erro ao buscar CEP:', err));
+        .catch(() => {
+          this.notification.error('Erro', 'Erro ao buscar CEP. Verifique sua conexão.');
+        });
     }
   }
 }

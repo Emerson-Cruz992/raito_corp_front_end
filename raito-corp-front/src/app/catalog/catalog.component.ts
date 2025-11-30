@@ -6,9 +6,10 @@ import { ProductDetailComponent, ProductDetailData } from '../product-detail/pro
 import { CartService } from '../shared/cart.service';
 import { ProdutoService } from '../core/services/catalogo/produto.service';
 import { Produto } from '../shared/models';
+import { NotificationService } from '../shared/notification.service';
 
 interface Product {
-  id: number;
+  id: string;  // UUID do banco de dados
   name: string;
   category: string;
   price: number;
@@ -54,13 +55,14 @@ export class CatalogComponent implements OnInit {
   currentProducts: Product[] = [];
 
   // Feedback visual
-  addingToCart: { [productId: number]: boolean } = {};
-  showSuccessMessage: { [productId: number]: boolean } = {};
+  addingToCart: { [productId: string]: boolean } = {};
+  showSuccessMessage: { [productId: string]: boolean } = {};
 
   constructor(
     private cartService: CartService,
     private route: ActivatedRoute,
-    private produtoService: ProdutoService
+    private produtoService: ProdutoService,
+    private notification: NotificationService
   ) {}
 
   ngOnInit() {
@@ -73,7 +75,7 @@ export class CatalogComponent implements OnInit {
       const fromHome = params['fromHome'];
 
       if (openProductId && fromHome === 'true') {
-        const product = this.allProducts.find(p => p.id === Number(openProductId));
+        const product = this.allProducts.find(p => p.id === openProductId);
 
         if (product) {
           setTimeout(() => {
@@ -90,13 +92,12 @@ export class CatalogComponent implements OnInit {
   loadProductsFromBackend() {
     this.produtoService.listarProdutos().subscribe({
       next: (produtos: Produto[]) => {
-        console.log('Produtos carregados:', produtos);
 
         // Converter produtos do backend para o formato local
         this.allProducts = produtos
           .filter(p => p.ativo)
-          .map((p, index) => ({
-            id: index + 1,
+          .map((p) => ({
+            id: p.id,  // Usar o UUID real do banco de dados
             name: p.nome,
             category: 'Iluminação',
             price: p.preco,
@@ -113,8 +114,7 @@ export class CatalogComponent implements OnInit {
         this.applyFilters();
       },
       error: (error) => {
-        console.error('Erro ao carregar produtos:', error);
-        // Manter produtos vazios em caso de erro
+        this.notification.error('Erro', 'Não foi possível carregar os produtos');
         this.allProducts = [];
         this.filteredProducts = [];
         this.currentProducts = [];
@@ -248,23 +248,23 @@ export class CatalogComponent implements OnInit {
     // Fechar modal
     this.closeDetail();
 
-    // Mostrar feedback visual (opcional)
-    alert('Produto adicionado ao carrinho!');
+    // Mostrar feedback visual
+    this.notification.success('Adicionado!', `${productDetail.name} foi adicionado ao carrinho`);
   }
 
   // Mapeia Product -> ProductDetailData
   mapToDetail(product?: Product): ProductDetailData | undefined {
     if (!product) return undefined;
     return {
-      id: Number(product.id),
+      id: product.id,
       name: product.name,
       category: product.category,
-      price: Number(product.price),
-      originalPrice: product.originalPrice != null ? Number(product.originalPrice) : undefined,
+      price: product.price,
+      originalPrice: product.originalPrice,
       image: product.image,
       badges: product.badges,
-      isNew: Boolean(product.isNew),
-      isPromotion: Boolean(product.isPromotion),
+      isNew: product.isNew,
+      isPromotion: product.isPromotion,
       description: product.description || 'Produto de alta qualidade com garantia estendida e suporte especializado.'
     };
   }
@@ -301,13 +301,13 @@ export class CatalogComponent implements OnInit {
   }
 
   // Verificar se produto está no carrinho
-  isInCart(productId: number): boolean {
+  isInCart(productId: string): boolean {
     const items = this.cartService.getItems();
     return items.some(item => item.id === productId);
   }
 
   // Obter quantidade do produto no carrinho
-  getCartQuantity(productId: number): number {
+  getCartQuantity(productId: string): number {
     const items = this.cartService.getItems();
     const item = items.find(i => i.id === productId);
     return item?.qty || 0;

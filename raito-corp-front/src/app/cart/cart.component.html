@@ -176,18 +176,19 @@
   <!-- Formulário de Endereço -->
   <section *ngIf="showAddressForm" class="address-form-section">
     <div class="container">
+      <button class="back-button" (click)="showAddressForm = false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Voltar ao Carrinho
+      </button>
+
       <div class="form-container">
-        <button class="back-button" (click)="showAddressForm = false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-          Voltar ao Carrinho
-        </button>
+        <div>
+          <h2>Endereço de Entrega</h2>
+          <p class="form-subtitle">Preencha os dados para finalizar seu pedido</p>
 
-        <h2>Endereço de Entrega</h2>
-        <p class="form-subtitle">Preencha os dados para finalizar seu pedido</p>
-
-        <form class="address-form" (ngSubmit)="finalizarPedido()">
+          <form class="address-form" (ngSubmit)="finalizarPedido()">
           <div class="form-row">
             <div class="form-group">
               <label for="cep">CEP *</label>
@@ -272,15 +273,16 @@
           </div>
 
           <div class="form-actions">
-            <button type="submit" class="btn-submit">
+            <button type="submit" class="btn-submit" [disabled]="isProcessing">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M9 11l3 3L22 4"/>
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
               </svg>
-              Finalizar Pedido - {{ totalComFrete | currency:'BRL' }}
+              {{ isProcessing ? 'Processando...' : 'Finalizar Pedido - ' + (totalComFrete | currency:'BRL') }}
             </button>
           </div>
         </form>
+        </div>
 
         <!-- Resumo lateral -->
         <div class="order-sidebar">

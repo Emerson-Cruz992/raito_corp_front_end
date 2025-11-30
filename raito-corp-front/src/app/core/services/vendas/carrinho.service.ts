@@ -15,12 +15,12 @@ export class CarrinhoService {
 
   /**
    * Cria um novo carrinho
-   * API: POST /api/carrinho/criar?idCliente={UUID}
+   * API: POST /api/carrinho/criar
    */
   criarCarrinho(idCliente: string): Observable<Carrinho> {
     return this.http.post<Carrinho>(
-      `${this.apiUrl}${this.endpoint}/criar?idCliente=${idCliente}`,
-      {}
+      `${this.apiUrl}${this.endpoint}/criar`,
+      { idCliente }
     );
   }
 
@@ -34,12 +34,12 @@ export class CarrinhoService {
 
   /**
    * Adiciona item ao carrinho
-   * API: POST /api/carrinho/{idCarrinho}/adicionar?idProduto={UUID}&quantidade=2&preco=59.90
+   * API: POST /api/carrinho/{idCarrinho}/adicionar
    */
   adicionarItem(idCarrinho: string, idProduto: string, quantidade: number, preco: number): Observable<ItemCarrinho> {
     return this.http.post<ItemCarrinho>(
-      `${this.apiUrl}${this.endpoint}/${idCarrinho}/adicionar?idProduto=${idProduto}&quantidade=${quantidade}&preco=${preco}`,
-      {}
+      `${this.apiUrl}${this.endpoint}/${idCarrinho}/adicionar`,
+      { idProduto, quantidade, preco }
     );
   }
 

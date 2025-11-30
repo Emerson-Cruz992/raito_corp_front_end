@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, OnChanges, SimpleChanges, Outpu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Product } from '../../shared/models/admin.models';
+import { NotificationService } from '../../shared/notification.service';
 
 @Component({
   selector: 'app-product-modal',
@@ -34,6 +35,8 @@ export class ProductModalComponent implements OnInit, OnChanges {
   selectedImageFile: File | null = null;
 
   categories = ['Lustres', 'Plafons', 'Trilhos', 'Comercial', 'Lampadas', 'Arandelas'];
+
+  constructor(private notification: NotificationService) {}
 
   ngOnInit() {
     this.loadProductData();
@@ -133,13 +136,13 @@ export class ProductModalComponent implements OnInit, OnChanges {
 
       // Validar tamanho (máximo 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('A imagem deve ter no máximo 5MB');
+        this.notification.warning('Imagem muito grande', 'A imagem deve ter no máximo 5MB');
         return;
       }
 
       // Validar tipo
       if (!file.type.startsWith('image/')) {
-        alert('Por favor, selecione apenas arquivos de imagem');
+        this.notification.warning('Arquivo inválido', 'Por favor, selecione apenas arquivos de imagem');
         return;
       }
 

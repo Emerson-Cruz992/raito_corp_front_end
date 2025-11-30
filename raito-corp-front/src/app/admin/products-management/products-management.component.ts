@@ -7,6 +7,7 @@ import { ProductModalComponent } from '../product-modal/product-modal.component'
 import { ProdutoService } from '../../core/services/catalogo/produto.service';
 import { EstoqueService } from '../../core/services/estoque/estoque.service';
 import { Produto, CriarProdutoDTO, AtualizarProdutoDTO } from '../../shared/models';
+import { NotificationService } from '../../shared/notification.service';
 import { Subject } from 'rxjs';
 import { takeUntil, switchMap } from 'rxjs/operators';
 
@@ -32,7 +33,8 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
   constructor(
     private adminDataService: AdminDataService,
     private produtoService: ProdutoService,
-    private estoqueService: EstoqueService
+    private estoqueService: EstoqueService,
+    private notification: NotificationService
   ) {}
 
   ngOnInit() {
@@ -130,12 +132,11 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
             setTimeout(() => {
               this.loadProducts();
             }, 500);
-            alert('Produto atualizado com sucesso!');
+            this.notification.success('Sucesso!', 'Produto atualizado com sucesso!');
           },
           error: (error) => {
             this.isSaving = false;
-            console.error('Erro ao atualizar produto:', error);
-            alert('Erro ao atualizar produto. Tente novamente.');
+            this.notification.error('Erro', 'Erro ao atualizar produto. Tente novamente.');
           }
         });
     } else {
@@ -166,12 +167,11 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
             this.closeModal();
             // Recarregar lista de produtos
             this.loadProducts();
-            alert('Produto criado com sucesso!');
+            this.notification.success('Sucesso!', 'Produto criado com sucesso!');
           },
           error: (error) => {
             this.isSaving = false;
-            console.error('Erro ao criar produto:', error);
-            alert('Erro ao criar produto. Tente novamente.');
+            this.notification.error('Erro', 'Erro ao criar produto. Tente novamente.');
           }
         });
     }
