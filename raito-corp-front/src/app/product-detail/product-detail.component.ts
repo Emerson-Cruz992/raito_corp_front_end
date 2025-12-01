@@ -11,6 +11,7 @@ export interface ProductDetailData {
   badges: string[];
   isNew: boolean;
   isPromotion: boolean;
+  stockQuantity: number;
   description?: string;
 }
 

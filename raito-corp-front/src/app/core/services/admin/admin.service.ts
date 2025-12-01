@@ -14,6 +14,9 @@ export interface ProdutoAdminDTO {
   urlImagem: string;
   emDestaque: boolean;
   descricao: string;
+  isNovidade: boolean;
+  isPromocao: boolean;
+  precoOriginal: number;
 }
 
 export interface PedidoAdminDTO {

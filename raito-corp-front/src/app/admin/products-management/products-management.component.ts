@@ -86,7 +86,11 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
         nome: product.nome,
         descricao: product.descricao,
         preco: product.preco,
-        ativo: true
+        precoOriginal: product.precoOriginal,
+        ativo: true,
+        emDestaque: product.emDestaque,
+        isNovidade: product.isNovidade,
+        isPromocao: product.isPromocao
       };
 
       this.produtoService.atualizarProduto(idProduto, updateDTO)

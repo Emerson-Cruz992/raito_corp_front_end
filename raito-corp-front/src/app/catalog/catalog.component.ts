@@ -2,11 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { ProductDetailComponent, ProductDetailData } from '../product-detail/product-detail.component';
 import { CartService } from '../shared/cart.service';
 import { ProdutoService } from '../core/services/catalogo/produto.service';
 import { Produto } from '../shared/models';
 import { NotificationService } from '../shared/notification.service';
+import { environment } from '../../environments/environment';
 
 interface Product {
   id: string;  // UUID do banco de dados
@@ -18,6 +20,7 @@ interface Product {
   badges: string[];
   isNew: boolean;
   isPromotion: boolean;
+  stockQuantity: number;
   description?: string;
 }
 
@@ -62,7 +65,8 @@ export class CatalogComponent implements OnInit {
     private cartService: CartService,
     private route: ActivatedRoute,
     private produtoService: ProdutoService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -87,11 +91,12 @@ export class CatalogComponent implements OnInit {
   }
 
   /**
-   * Carrega produtos do backend
+   * Carrega produtos do backend COM ESTOQUE
    */
   loadProductsFromBackend() {
-    this.produtoService.listarProdutos().subscribe({
-      next: (produtos: Produto[]) => {
+    // Usar endpoint com informação de estoque
+    this.http.get<any[]>(`${environment.apiUrl}/produtos/com-estoque`).subscribe({
+      next: (produtos) => {
 
         // Converter produtos do backend para o formato local
         this.allProducts = produtos
@@ -101,10 +106,12 @@ export class CatalogComponent implements OnInit {
             name: p.nome,
             category: 'Iluminação',
             price: p.preco,
+            originalPrice: p.precoOriginal,
             image: p.imagemUrl || 'https://images.unsplash.com/photo-1517991104123-023dcd3118c9?w=400',
             badges: p.emDestaque ? ['Destaque'] : [],
-            isNew: false,
-            isPromotion: false,
+            isNew: p.isNovidade || false,
+            isPromotion: p.isPromocao || false,
+            stockQuantity: p.quantidadeEstoque || 0,
             description: p.descricao
           }));
 
@@ -234,6 +241,19 @@ export class CatalogComponent implements OnInit {
 
   // Adicionar ao carrinho do modal de detalhes
   addToCartFromDetail(productDetail: ProductDetailData) {
+    // Verificar se há estoque disponível
+    if (productDetail.stockQuantity === 0) {
+      this.notification.error('Produto Esgotado', 'Este produto não está mais disponível em estoque');
+      return;
+    }
+
+    // Verificar se a quantidade no carrinho já atingiu o limite de estoque
+    const currentCartQty = this.getCartQuantity(productDetail.id);
+    if (currentCartQty >= productDetail.stockQuantity) {
+      this.notification.error('Estoque Insuficiente', `Apenas ${productDetail.stockQuantity} unidades disponíveis. Você já adicionou o máximo permitido.`);
+      return;
+    }
+
     // Adicionar ao carrinho
     this.cartService.addItem(
       {
@@ -265,6 +285,7 @@ export class CatalogComponent implements OnInit {
       badges: product.badges,
       isNew: product.isNew,
       isPromotion: product.isPromotion,
+      stockQuantity: product.stockQuantity,
       description: product.description || 'Produto de alta qualidade com garantia estendida e suporte especializado.'
     };
   }
@@ -272,6 +293,19 @@ export class CatalogComponent implements OnInit {
   // Adicionar produto ao carrinho com feedback visual
   addToCart(product: Product, event: Event) {
     event.stopPropagation();
+
+    // Verificar se há estoque disponível
+    if (product.stockQuantity === 0) {
+      this.notification.error('Produto Esgotado', 'Este produto não está mais disponível em estoque');
+      return;
+    }
+
+    // Verificar se a quantidade no carrinho já atingiu o limite de estoque
+    const currentCartQty = this.getCartQuantity(product.id);
+    if (currentCartQty >= product.stockQuantity) {
+      this.notification.error('Estoque Insuficiente', `Apenas ${product.stockQuantity} unidades disponíveis. Você já adicionou o máximo permitido.`);
+      return;
+    }
 
     // Mostrar loading
     this.addingToCart[product.id] = true;
@@ -311,5 +345,16 @@ export class CatalogComponent implements OnInit {
     const items = this.cartService.getItems();
     const item = items.find(i => i.id === productId);
     return item?.qty || 0;
+  }
+
+  // Verificar se produto está esgotado
+  isOutOfStock(product: Product): boolean {
+    return product.stockQuantity === 0;
+  }
+
+  // Verificar se pode adicionar mais ao carrinho
+  canAddMore(product: Product): boolean {
+    const currentCartQty = this.getCartQuantity(product.id);
+    return currentCartQty < product.stockQuantity;
   }
 }

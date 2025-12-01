@@ -76,6 +76,14 @@ export class ProdutoService {
   }
 
   /**
+   * Lista todos os produtos com informação de estoque
+   * API: GET /api/produtos/com-estoque
+   */
+  listarTodosComEstoque(): Observable<Produto[]> {
+    return this.api.get<Produto[]>(`${this.endpoint}/com-estoque`);
+  }
+
+  /**
    * Upload de imagem do produto
    * API: POST /api/produtos/{idProduto}/imagem
    */

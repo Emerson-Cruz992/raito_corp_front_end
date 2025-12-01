@@ -212,11 +212,14 @@ export class AdminDataService {
       nome: produto.nome,
       categoria: produto.categoria,
       preco: produto.preco,
+      precoOriginal: produto.precoOriginal,
       estoque: produto.estoque,
       vendidos: produto.vendidos,
       receita: produto.receita,
       imagem: produto.urlImagem || 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=300&h=300&fit=crop',
       emDestaque: produto.emDestaque,
+      isNovidade: produto.isNovidade,
+      isPromocao: produto.isPromocao,
       descricao: produto.descricao
     };
   }

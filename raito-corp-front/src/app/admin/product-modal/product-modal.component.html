@@ -91,6 +91,22 @@
         </label>
       </div>
 
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="formData.isNovidade" name="isNovidade">
+          <span>Produto Novidade</span>
+          <small>Este produto será marcado como novidade no catálogo</small>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="formData.isPromocao" name="isPromocao">
+          <span>Em Promoção</span>
+          <small>Este produto será marcado como em promoção</small>
+        </label>
+      </div>
+
       <div class="modal-footer">
         <button type="button" class="btn-cancel" (click)="onClose()">Cancelar</button>
         <button type="submit" class="btn-save">{{product ? 'Salvar Alterações' : 'Adicionar Produto'}}</button>

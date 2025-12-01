@@ -9,6 +9,7 @@ import { CarrinhoService } from '../core/services/vendas/carrinho.service';
 import { PedidoService } from '../core/services/vendas/pedido.service';
 import { AdminDataService } from '../shared/admin-data.service';
 import { NotificationService } from '../shared/notification.service';
+import { ProdutoService } from '../core/services/catalogo/produto.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -22,6 +23,7 @@ export class CartComponent implements OnInit {
   isAuthenticated = false;
   showAddressForm = false;
   isProcessing = false;
+  productStocks: Map<string, number> = new Map();
 
   // Dados de endereço
   endereco = {
@@ -42,11 +44,13 @@ export class CartComponent implements OnInit {
     private carrinhoService: CarrinhoService,
     private pedidoService: PedidoService,
     private adminDataService: AdminDataService,
-    private notification: NotificationService
+    private notification: NotificationService,
+    private produtoService: ProdutoService
   ) {}
 
   ngOnInit() {
     this.checkAuthentication();
+    this.loadProductStocks();
   }
 
   checkAuthentication() {
@@ -60,7 +64,31 @@ export class CartComponent implements OnInit {
   get frete(): number { return this.subtotal > 200 ? 0 : 15; }
   get totalComFrete(): number { return this.subtotal + this.frete; }
 
-  inc(item: CartItem) { this.cart.updateQty(item.id, item.qty + 1); }
+  loadProductStocks() {
+    this.produtoService.listarTodosComEstoque().subscribe({
+      next: (produtos: any[]) => {
+        produtos.forEach((p: any) => {
+          this.productStocks.set(p.id, p.quantidadeEstoque || 0);
+        });
+      },
+      error: (err: any) => {
+        console.error('Erro ao carregar estoque dos produtos', err);
+      }
+    });
+  }
+
+  inc(item: CartItem) {
+    const stockAvailable = this.productStocks.get(item.id) || 0;
+    if (item.qty >= stockAvailable) {
+      this.notification.error(
+        'Estoque Insuficiente',
+        `Apenas ${stockAvailable} unidades disponíveis.`
+      );
+      return;
+    }
+    this.cart.updateQty(item.id, item.qty + 1);
+  }
+
   dec(item: CartItem) { this.cart.updateQty(item.id, Math.max(1, item.qty - 1)); }
   remove(item: CartItem) { this.cart.removeItem(item.id); }
 
