@@ -20,7 +20,7 @@ Para começar a desenvolver, siga as instruções detalhadas no nosso **[Guia do
 
 ## Tecnologias Utilizadas
 
-- **[Angular](https://angular.dev/)**: Framework principal para a construção da interface.
+- **[Angular](https://angular.dev/)**: Framework principal para a construção da interface (v19).
 - **[Three.js](https://threejs.org/)** e **[Babylon.js](https://www.babylonjs.com/)**: Bibliotecas para renderização e visualização de modelos 3D.
 - **[Docker](https://www.docker.com/)**: Para containerização e implantação da aplicação.
 - **[Nginx](https://www.nginx.com/)**: Servidor web para servir os arquivos estáticos da aplicação em produção.

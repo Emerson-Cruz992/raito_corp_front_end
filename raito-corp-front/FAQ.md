@@ -24,8 +24,8 @@ A lógica de login e gerenciamento de tokens fica centralizada nos serviços de 
 O projeto foi desenvolvido e testado com as seguintes versões:
 
 - **Node.js**: `v20.x`
-- **Angular**: `v17.x`
-- **Angular CLI**: `v17.x`
+- **Angular**: `v19.x`
+- **Angular CLI**: `v19.x`
 
 É altamente recomendável usar essas versões para evitar problemas de compatibilidade.
 

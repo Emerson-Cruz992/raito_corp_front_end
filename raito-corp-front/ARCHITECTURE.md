@@ -4,7 +4,7 @@ Este documento descreve a arquitetura do projeto `raito-corp-front`, uma aplica�
 
 ## 1. Visão Geral
 
-A aplicação segue uma arquitetura baseada em componentes, utilizando o framework **Angular** na sua versão 17. A estrutura foi projetada para ser desacoplada, facilitando a manutenção e a evolução do código.
+A aplicação segue uma arquitetura baseada em componentes, utilizando o framework **Angular** na sua versão 19. A estrutura foi projetada para ser desacoplada, facilitando a manutenção e a evolução do código.
 
 ## 2. Estrutura de Pastas
 
@@ -16,21 +16,30 @@ src/app/
 ├── assets/           # Recursos estáticos (imagens, modelos 3D)
 ├── cart/             # Funcionalidades do carrinho de compras
 ├── catalog/          # Catálogo de produtos
-├── core/             # Lógica central (guards, interceptors, services)
+├── core/             # Lógica central
+│   ├── guards/       # Guardas de rota (auth, admin, role)
+│   └── services/     # Serviços organizados por domínio (admin, cadastro, catalogo...)
 ├── home/             # Página inicial
 ├── login/            # Módulo de autenticação
 ├── product-detail/   # Detalhes do produto
 ├── shared/           # Componentes e serviços compartilhados
+│   └── models/       # Interfaces e tipos organizados por domínio
 └── visualizador-3d/  # Componente de visualização 3D
 ```
 
-- **`core`**: Contém a lógica de `guards` (`admin.guard.ts`, `auth.guard.ts`), que protegem as rotas e garantem que apenas usuários autorizados acessem determinadas áreas.
-- **`shared`**: Armazena componentes, diretivas e pipes reutilizáveis em toda a aplicação, evitando duplicação de código.
-- **Módulos de funcionalidade**: Cada pasta (ex: `cart`, `catalog`) contém os componentes, templates e estilos específicos daquela funcionalidade, operando de forma independente.
+- **`core`**: Contém a lógica de `guards` (`admin.guard.ts`, `auth.guard.ts`, `role.guard.ts`) e serviços essenciais organizados por domínio.
+- **`shared`**: Armazena componentes, diretivas, pipes e modelos (`models/`) reutilizáveis em toda a aplicação.
+- **Módulos de funcionalidade**: Cada pasta (ex: `cart`, `catalog`) contém os componentes, templates e estilos específicos daquela funcionalidade.
+
+### 2.1 Convenção de Nomenclatura
+
+O projeto adota a seguinte convenção:
+- **Código-fonte (Pastas, Arquivos, Classes, Variáveis):** Inglês (ex: `CartComponent`, `ProductService`).
+- **Rotas (URLs):** Português (ex: `/carrinho`, `/catalogo`).
 
 ## 3. Framework e Tecnologias
 
-### 3.1. Angular 17
+### 3.1. Angular 19
 
 A aplicação utiliza os recursos mais recentes do Angular, incluindo:
 
@@ -56,8 +65,9 @@ O sistema de roteamento é definido no arquivo `app.routes.ts`. Ele utiliza `gua
 
 - **`authGuard`**: Verifica se o usuário está autenticado antes de acessar áreas restritas.
 - **`adminGuard`**: Garante que apenas usuários com perfil de administrador possam acessar o painel de administração (`/admin`).
+- **`roleGuard`**: Um guard genérico que permite proteger rotas baseando-se em um array de papéis (`roles`) passados via `data` da rota.
 
-A rota `/admin` é um exemplo de aninhamento (`nested routes`), onde um conjunto de rotas filhas é protegido por um único `guard`.
+A rota `/admin` é um exemplo de aninhamento (`nested routes`), contendo sub-rotas como `dashboard`, `products`, `stock` e `orders`. O módulo administrativo também utiliza componentes de suporte, como o `product-modal` para edição de itens.
 
 ## 6. Implantação (Deployment)
 

@@ -10,7 +10,7 @@ Antes de começar, certifique-se de ter as seguintes ferramentas instaladas:
 
 - [Node.js](https://nodejs.org/) (versão 20.x ou superior)
 - [npm](https://www.npmjs.com/) (geralmente instalado com o Node.js)
-- [Angular CLI](https://angular.dev/tools/cli) (versão 17.x ou superior)
+- [Angular CLI](https://angular.dev/tools/cli) (versão 19.x ou superior)
 - [Docker](https://www.docker.com/) (para implantação)
 
 ### 1.2. Configuração do Ambiente
@@ -43,6 +43,8 @@ O arquivo `package.json` define vários scripts para automatizar tarefas comuns 
 - `npm run lint`: Analisa o código em busca de erros de linting.
 
 ## 3. Detalhes dos Módulos Principais
+
+A aplicação segue uma convenção onde o **código-fonte (componentes, serviços) está em inglês**, mas as **rotas de navegação estão em português** (ex: componente `CartComponent` acessível via `/carrinho`).
 
 A aplicação é estruturada em módulos baseados em funcionalidades. Abaixo estão os principais:
 
