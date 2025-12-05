@@ -22,28 +22,23 @@
           <span class="category">{{ product?.category }}</span>
         </div>
 
-        <p class="description" *ngIf="product?.description">{{ product?.description }}</p>
-
-        <div class="feature-grid">
-          <div class="feature">
-            <strong>Garantia</strong>
-            <span>2 anos</span>
-          </div>
-          <div class="feature">
-            <strong>Eficiência</strong>
-            <span>A++</span>
-          </div>
-          <div class="feature">
-            <strong>Avaliação</strong>
-            <span>4.8/5.0</span>
-          </div>
+        <div class="stock-info" *ngIf="product">
+          <span class="stock-label" [ngClass]="{'out-of-stock': product.stockQuantity === 0, 'low-stock': product.stockQuantity > 0 && product.stockQuantity <= 5}">
+            <ng-container *ngIf="product.stockQuantity === 0">❌ ESGOTADO</ng-container>
+            <ng-container *ngIf="product.stockQuantity > 0">✓ {{ product.stockQuantity }} unidades disponíveis</ng-container>
+          </span>
         </div>
+
+        <p class="description" *ngIf="product?.description">{{ product?.description }}</p>
       </div>
     </section>
 
     <footer class="modal-footer">
       <button class="ghost">Testar no Visualizador 3D</button>
-      <button class="primary">Adicionar ao Carrinho</button>
+      <button class="primary" (click)="onAddToCart()" [disabled]="product?.stockQuantity === 0">
+        <ng-container *ngIf="product?.stockQuantity === 0">Produto Esgotado</ng-container>
+        <ng-container *ngIf="product && product.stockQuantity > 0">Adicionar ao Carrinho</ng-container>
+      </button>
     </footer>
   </div>
 </div>

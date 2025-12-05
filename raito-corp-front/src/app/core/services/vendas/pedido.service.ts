@@ -42,12 +42,12 @@ export class PedidoService {
 
   /**
    * Atualiza status do pedido
-   * API: PUT /api/pedidos/{idPedido}/status?status=ENVIADO
+   * API: PUT /api/pedidos/{idPedido}/status
    */
   atualizarStatus(idPedido: string, status: StatusPedido): Observable<Pedido> {
     return this.http.put<Pedido>(
-      `${this.apiUrl}${this.endpoint}/${idPedido}/status?status=${status}`,
-      {}
+      `${this.apiUrl}${this.endpoint}/${idPedido}/status`,
+      { status }
     );
   }
 

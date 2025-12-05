@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminDataService } from '../../shared/admin-data.service';
-import { Order, OrderStatus } from '../../shared/models/admin.models';
+import { PedidoService } from '../../core/services/vendas/pedido.service';
+import { Pedido, StatusPedido } from '../../shared/models';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -14,16 +14,20 @@ import { takeUntil } from 'rxjs/operators';
   styleUrl: './orders-management.component.scss'
 })
 export class OrdersManagementComponent implements OnInit, OnDestroy {
-  orders: Order[] = [];
-  selectedOrder: Order | null = null;
+  orders: Pedido[] = [];
+  selectedOrder: Pedido | null = null;
   showModal = false;
-  statusOptions: OrderStatus[] = ['Pendente', 'Processando', 'Enviado', 'Entregue', 'Cancelado'];
+  statusOptions: StatusPedido[] = ['PENDENTE', 'PROCESSANDO', 'ENVIADO', 'ENTREGUE', 'CANCELADO'];
   private destroy$ = new Subject<void>();
 
-  constructor(private adminDataService: AdminDataService) {}
+  constructor(private pedidoService: PedidoService) {}
 
   ngOnInit() {
-    this.adminDataService.getOrders()
+    this.loadOrders();
+  }
+
+  loadOrders() {
+    this.pedidoService.listarTodos()
       .pipe(takeUntil(this.destroy$))
       .subscribe(orders => {
         this.orders = orders;
@@ -35,7 +39,7 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  openOrderDetails(order: Order) {
+  openOrderDetails(order: Pedido) {
     this.selectedOrder = {...order};
     this.showModal = true;
   }
@@ -46,9 +50,23 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
   }
 
   updateOrderStatus() {
-    if (this.selectedOrder) {
-      this.adminDataService.updateOrderStatus(this.selectedOrder.id, this.selectedOrder.status);
-      this.closeModal();
+    if (this.selectedOrder && this.selectedOrder.idPedido) {
+      this.pedidoService.atualizarStatus(this.selectedOrder.idPedido, this.selectedOrder.status)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (pedidoAtualizado) => {
+            // Atualiza o pedido na lista
+            const index = this.orders.findIndex(p => p.idPedido === pedidoAtualizado.idPedido);
+            if (index !== -1) {
+              this.orders[index] = pedidoAtualizado;
+            }
+            this.closeModal();
+          },
+          error: (error) => {
+            console.error('Erro ao atualizar status do pedido:', error);
+            alert('Erro ao atualizar status do pedido');
+          }
+        });
     }
   }
 
@@ -56,13 +74,13 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
-  getStatusColor(status: OrderStatus): string {
-    const colors: Record<OrderStatus, string> = {
-      'Pendente': 'warning',
-      'Processando': 'info',
-      'Enviado': 'success',
-      'Entregue': 'success',
-      'Cancelado': 'danger'
+  getStatusColor(status: StatusPedido): string {
+    const colors: Record<StatusPedido, string> = {
+      'PENDENTE': 'warning',
+      'PROCESSANDO': 'info',
+      'ENVIADO': 'success',
+      'ENTREGUE': 'success',
+      'CANCELADO': 'danger'
     };
     return colors[status];
   }

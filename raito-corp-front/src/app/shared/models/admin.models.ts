@@ -11,6 +11,9 @@ export interface Product {
   imagem?: string;
   descricao?: string;
   badges?: string[];
+  emDestaque?: boolean;
+  isNovidade?: boolean;
+  isPromocao?: boolean;
 }
 
 // Order Model

@@ -26,12 +26,12 @@
       <span>Ações</span>
     </div>
     <div class="table-row" *ngFor="let order of orders">
-      <span class="order-id">{{order.id}}</span>
-      <span>{{order.cliente}}</span>
-      <span class="email">{{order.email}}</span>
-      <span>{{order.itens}}</span>
-      <span class="total">{{formatCurrency(order.total)}}</span>
-      <span>{{order.data}}</span>
+      <span class="order-id">{{order.idPedido}}</span>
+      <span>{{order.idCliente}}</span>
+      <span class="email">-</span>
+      <span>{{order.itens.length || 0}}</span>
+      <span class="total">{{formatCurrency(order.valorTotal)}}</span>
+      <span>{{order.criadoEm | date:'short'}}</span>
       <span>
         <span class="badge" [class]="getStatusColor(order.status)">{{order.status}}</span>
       </span>
@@ -51,12 +51,12 @@
         </button>
       </div>
       <div class="modal-body">
-        <p><strong>Pedido:</strong> {{selectedOrder.id}}</p>
-        <p><strong>Cliente:</strong> {{selectedOrder.cliente}}</p>
-        <p><strong>E-mail:</strong> {{selectedOrder.email}}</p>
-        <p><strong>Itens:</strong> {{selectedOrder.itens}}</p>
-        <p><strong>Total:</strong> {{formatCurrency(selectedOrder.total)}}</p>
-        <p><strong>Data:</strong> {{selectedOrder.data}}</p>
+        <p><strong>Pedido:</strong> {{selectedOrder.idPedido}}</p>
+        <p><strong>Cliente ID:</strong> {{selectedOrder.idCliente}}</p>
+        <p><strong>Endereço Entrega:</strong> {{selectedOrder.idEnderecoEntrega || 'Não informado'}}</p>
+        <p><strong>Itens:</strong> {{selectedOrder.itens.length || 0}}</p>
+        <p><strong>Total:</strong> {{formatCurrency(selectedOrder.valorTotal)}}</p>
+        <p><strong>Data:</strong> {{selectedOrder.criadoEm | date:'short'}}</p>
         <div class="form-group">
           <label>Atualizar Status</label>
           <select [(ngModel)]="selectedOrder.status">

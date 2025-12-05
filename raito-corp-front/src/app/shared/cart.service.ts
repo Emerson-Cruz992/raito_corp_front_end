@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 export interface CartItem {
-  id: number;
+  id: string;  // UUID do produto
   name: string;
   price: number;
   image: string;
@@ -13,6 +14,8 @@ const STORAGE_KEY = 'rc_cart_v1';
 @Injectable({ providedIn: 'root' })
 export class CartService {
   private items: CartItem[] = [];
+  private itemsSubject = new BehaviorSubject<CartItem[]>([]);
+  public items$: Observable<CartItem[]> = this.itemsSubject.asObservable();
 
   constructor() {
     this.load();
@@ -20,6 +23,7 @@ export class CartService {
 
   private save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.items));
+    this.itemsSubject.next([...this.items]);
   }
 
   private load() {
@@ -29,6 +33,7 @@ export class CartService {
     } catch {
       this.items = [];
     }
+    this.itemsSubject.next([...this.items]);
   }
 
   getItems(): CartItem[] {
@@ -53,14 +58,14 @@ export class CartService {
     this.save();
   }
 
-  updateQty(id: number, qty: number) {
+  updateQty(id: string, qty: number) {
     const it = this.items.find(i => i.id === id);
     if (!it) return;
     it.qty = Math.max(1, qty);
     this.save();
   }
 
-  removeItem(id: number) {
+  removeItem(id: string) {
     this.items = this.items.filter(i => i.id !== id);
     this.save();
   }

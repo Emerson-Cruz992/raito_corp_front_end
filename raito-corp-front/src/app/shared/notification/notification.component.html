@@ -1,0 +1,26 @@
+<div class="notification-overlay" *ngIf="notification" (click)="close()">
+  <div class="notification-modal" [class]="'notification-' + notification.type" (click)="$event.stopPropagation()">
+    <div class="notification-icon">
+      <span>{{ getIcon() }}</span>
+    </div>
+
+    <h2 class="notification-title">{{ notification.title }}</h2>
+    <p class="notification-message">{{ notification.message }}</p>
+
+    <div class="notification-actions">
+      <button
+        *ngIf="notification.type === 'confirm'"
+        class="btn-cancel"
+        (click)="onCancel()">
+        {{ notification.cancelText || 'Cancelar' }}
+      </button>
+
+      <button
+        class="btn-confirm"
+        [class.btn-single]="notification.type !== 'confirm'"
+        (click)="onConfirm()">
+        {{ notification.confirmText || (notification.type === 'confirm' ? 'Confirmar' : 'OK') }}
+      </button>
+    </div>
+  </div>
+</div>

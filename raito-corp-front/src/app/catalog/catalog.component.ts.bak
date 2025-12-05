@@ -2,16 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { ProductDetailComponent, ProductDetailData } from '../product-detail/product-detail.component';
 import { CartService } from '../shared/cart.service';
-import { ProdutoService } from '../core/services/catalogo/produto.service';
-import { Produto } from '../shared/models';
-import { NotificationService } from '../shared/notification.service';
-import { environment } from '../../environments/environment';
 
 interface Product {
-  id: string;  // UUID do banco de dados
+  id: number;
   name: string;
   category: string;
   price: number;
@@ -20,8 +15,6 @@ interface Product {
   badges: string[];
   isNew: boolean;
   isPromotion: boolean;
-  stockQuantity: number;
-  description?: string;
 }
 
 interface Category {
@@ -49,29 +42,155 @@ export class CatalogComponent implements OnInit {
   selectedProduct: Product | undefined;
 
   categories: Category[] = [
-    { name: 'Todos', count: 0, slug: 'todos' }
+    { name: 'Todos', count: 24, slug: 'todos' },
+    { name: 'Lustres', count: 4, slug: 'lustres' },
+    { name: 'Plafons', count: 4, slug: 'plafons' },
+    { name: 'Trilhos', count: 4, slug: 'trilhos' },
+    { name: 'Comercial', count: 4, slug: 'comercial' },
+    { name: 'Arandelas', count: 4, slug: 'arandelas' },
+    { name: 'Lâmpadas', count: 4, slug: 'lampadas' }
   ];
 
-  allProducts: Product[] = [];
+  allProducts: Product[] = [
+    {
+      id: 1,
+      name: 'Lustre Pendente Moderno LED',
+      category: 'Lustres',
+      price: 299.90,
+      originalPrice: 399.90,
+      image: 'https://images.unsplash.com/photo-1517991104123-023dcd3118c9?w=400',
+      badges: ['Novo', 'Promoção'],
+      isNew: true,
+      isPromotion: true
+    },
+    {
+      id: 2,
+      name: 'Lustre Cristal Premium',
+      category: 'Lustres',
+      price: 1299.90,
+      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
+      badges: [],
+      isNew: false,
+      isPromotion: false
+    },
+    {
+      id: 3,
+      name: 'Pendente Industrial Triplo',
+      category: 'Lustres',
+      price: 349.90,
+      originalPrice: 449.90,
+      image: 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=400',
+      badges: ['Promoção'],
+      isNew: false,
+      isPromotion: true
+    },
+    {
+      id: 4,
+      name: 'Lustre Aramado Geométrico',
+      category: 'Lustres',
+      price: 259.90,
+      image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400',
+      badges: ['Novo'],
+      isNew: true,
+      isPromotion: false
+    },
+    {
+      id: 5,
+      name: 'Plafon LED Circular 24W',
+      category: 'Plafons',
+      price: 159.90,
+      image: 'https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?w=400',
+      badges: ['Novo'],
+      isNew: true,
+      isPromotion: false
+    },
+    {
+      id: 6,
+      name: 'Plafon Quadrado Embutir 36W',
+      category: 'Plafons',
+      price: 189.90,
+      image: 'https://images.unsplash.com/photo-1524484485831-a92ffc0de03f?w=400',
+      badges: [],
+      isNew: false,
+      isPromotion: false
+    },
+    {
+      id: 7,
+      name: 'Lâmpada Smart WiFi Colorida',
+      category: 'Lâmpadas',
+      price: 79.90,
+      image: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400',
+      badges: ['Novo'],
+      isNew: true,
+      isPromotion: false
+    },
+    {
+      id: 8,
+      name: 'Lâmpada Filamento Vintage E27',
+      category: 'Lâmpadas',
+      price: 34.90,
+      image: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400',
+      badges: [],
+      isNew: false,
+      isPromotion: false
+    },
+    {
+      id: 9,
+      name: 'Dimmer Touch Inteligente',
+      category: 'Lâmpadas',
+      price: 119.90,
+      image: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=400',
+      badges: ['Novo'],
+      isNew: true,
+      isPromotion: false
+    },
+    {
+      id: 10,
+      name: 'Trilho Industrial com 3 Spots',
+      category: 'Trilhos',
+      price: 239.90,
+      image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400',
+      badges: [],
+      isNew: false,
+      isPromotion: false
+    },
+    {
+      id: 11,
+      name: 'Trilho LED Magnético',
+      category: 'Trilhos',
+      price: 289.90,
+      image: 'https://images.unsplash.com/photo-1586473219010-2ffc57b0d282?w=400',
+      badges: ['Novo'],
+      isNew: true,
+      isPromotion: false
+    },
+    {
+      id: 12,
+      name: 'Sistema LED Comercial',
+      category: 'Comercial',
+      price: 489.90,
+      image: 'https://images.unsplash.com/photo-1586473219010-2ffc57b0d282?w=400',
+      badges: [],
+      isNew: false,
+      isPromotion: false
+    }
+  ];
 
   filteredProducts: Product[] = [];
   currentProducts: Product[] = [];
 
   // Feedback visual
-  addingToCart: { [productId: string]: boolean } = {};
-  showSuccessMessage: { [productId: string]: boolean } = {};
+  addingToCart: { [productId: number]: boolean } = {};
+  showSuccessMessage: { [productId: number]: boolean } = {};
 
   constructor(
     private cartService: CartService,
-    private route: ActivatedRoute,
-    private produtoService: ProdutoService,
-    private notification: NotificationService,
-    private http: HttpClient
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
-    // Carregar produtos do backend
-    this.loadProductsFromBackend();
+    this.filteredProducts = [...this.allProducts];
+    this.currentProducts = [...this.allProducts];
 
     // Verificar se veio da home com um produto para abrir
     this.route.queryParams.subscribe(params => {
@@ -79,52 +198,15 @@ export class CatalogComponent implements OnInit {
       const fromHome = params['fromHome'];
 
       if (openProductId && fromHome === 'true') {
-        const product = this.allProducts.find(p => p.id === openProductId);
+        // Buscar o produto pelo ID
+        const product = this.allProducts.find(p => p.id === Number(openProductId));
 
         if (product) {
+          // Abrir o modal do produto após um pequeno delay para garantir que a página carregou
           setTimeout(() => {
             this.openDetail(product);
           }, 300);
         }
-      }
-    });
-  }
-
-  /**
-   * Carrega produtos do backend COM ESTOQUE
-   */
-  loadProductsFromBackend() {
-    // Usar endpoint com informação de estoque
-    this.http.get<any[]>(`${environment.apiUrl}/produtos/com-estoque`).subscribe({
-      next: (produtos) => {
-
-        // Converter produtos do backend para o formato local
-        this.allProducts = produtos
-          .filter(p => p.ativo)
-          .map((p) => ({
-            id: p.id,  // Usar o UUID real do banco de dados
-            name: p.nome,
-            category: 'Iluminação',
-            price: p.preco,
-            originalPrice: p.precoOriginal,
-            image: p.imagemUrl || 'https://images.unsplash.com/photo-1517991104123-023dcd3118c9?w=400',
-            badges: p.emDestaque ? ['Destaque'] : [],
-            isNew: p.isNovidade || false,
-            isPromotion: p.isPromocao || false,
-            stockQuantity: p.quantidadeEstoque || 0,
-            description: p.descricao
-          }));
-
-        this.categories[0].count = this.allProducts.length;
-        this.filteredProducts = [...this.allProducts];
-        this.currentProducts = [...this.allProducts];
-        this.applyFilters();
-      },
-      error: (error) => {
-        this.notification.error('Erro', 'Não foi possível carregar os produtos');
-        this.allProducts = [];
-        this.filteredProducts = [];
-        this.currentProducts = [];
       }
     });
   }
@@ -239,73 +321,26 @@ export class CatalogComponent implements OnInit {
     document.body.classList.remove('no-scroll');
   }
 
-  // Adicionar ao carrinho do modal de detalhes
-  addToCartFromDetail(productDetail: ProductDetailData) {
-    // Verificar se há estoque disponível
-    if (productDetail.stockQuantity === 0) {
-      this.notification.error('Produto Esgotado', 'Este produto não está mais disponível em estoque');
-      return;
-    }
-
-    // Verificar se a quantidade no carrinho já atingiu o limite de estoque
-    const currentCartQty = this.getCartQuantity(productDetail.id);
-    if (currentCartQty >= productDetail.stockQuantity) {
-      this.notification.error('Estoque Insuficiente', `Apenas ${productDetail.stockQuantity} unidades disponíveis. Você já adicionou o máximo permitido.`);
-      return;
-    }
-
-    // Adicionar ao carrinho
-    this.cartService.addItem(
-      {
-        id: productDetail.id,
-        name: productDetail.name,
-        price: productDetail.price,
-        image: productDetail.image
-      },
-      1
-    );
-
-    // Fechar modal
-    this.closeDetail();
-
-    // Mostrar feedback visual
-    this.notification.success('Adicionado!', `${productDetail.name} foi adicionado ao carrinho`);
-  }
-
   // Mapeia Product -> ProductDetailData
   mapToDetail(product?: Product): ProductDetailData | undefined {
     if (!product) return undefined;
     return {
-      id: product.id,
+      id: Number(product.id),
       name: product.name,
       category: product.category,
-      price: product.price,
-      originalPrice: product.originalPrice,
+      price: Number(product.price),
+      originalPrice: product.originalPrice != null ? Number(product.originalPrice) : undefined,
       image: product.image,
       badges: product.badges,
-      isNew: product.isNew,
-      isPromotion: product.isPromotion,
-      stockQuantity: product.stockQuantity,
-      description: product.description || 'Produto de alta qualidade com garantia estendida e suporte especializado.'
+      isNew: Boolean(product.isNew),
+      isPromotion: Boolean(product.isPromotion),
+      description: 'Produto de alta qualidade com garantia estendida e suporte especializado.'
     };
   }
 
   // Adicionar produto ao carrinho com feedback visual
   addToCart(product: Product, event: Event) {
     event.stopPropagation();
-
-    // Verificar se há estoque disponível
-    if (product.stockQuantity === 0) {
-      this.notification.error('Produto Esgotado', 'Este produto não está mais disponível em estoque');
-      return;
-    }
-
-    // Verificar se a quantidade no carrinho já atingiu o limite de estoque
-    const currentCartQty = this.getCartQuantity(product.id);
-    if (currentCartQty >= product.stockQuantity) {
-      this.notification.error('Estoque Insuficiente', `Apenas ${product.stockQuantity} unidades disponíveis. Você já adicionou o máximo permitido.`);
-      return;
-    }
 
     // Mostrar loading
     this.addingToCart[product.id] = true;
@@ -335,26 +370,15 @@ export class CatalogComponent implements OnInit {
   }
 
   // Verificar se produto está no carrinho
-  isInCart(productId: string): boolean {
+  isInCart(productId: number): boolean {
     const items = this.cartService.getItems();
     return items.some(item => item.id === productId);
   }
 
   // Obter quantidade do produto no carrinho
-  getCartQuantity(productId: string): number {
+  getCartQuantity(productId: number): number {
     const items = this.cartService.getItems();
     const item = items.find(i => i.id === productId);
     return item?.qty || 0;
-  }
-
-  // Verificar se produto está esgotado
-  isOutOfStock(product: Product): boolean {
-    return product.stockQuantity === 0;
-  }
-
-  // Verificar se pode adicionar mais ao carrinho
-  canAddMore(product: Product): boolean {
-    const currentCartQty = this.getCartQuantity(product.id);
-    return currentCartQty < product.stockQuantity;
   }
 }

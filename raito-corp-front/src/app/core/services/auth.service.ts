@@ -79,15 +79,8 @@ export class AuthService {
    * Realiza logout do sistema
    */
   logout(): void {
-    // Chamar endpoint de logout no back-end (opcional)
-    const token = this.getToken();
-    if (token) {
-      this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe({
-        complete: () => this.clearAuthData()
-      });
-    } else {
-      this.clearAuthData();
-    }
+    // Limpar dados locais (não precisa chamar backend por enquanto)
+    this.clearAuthData();
   }
 
   /**

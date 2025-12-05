@@ -1,8 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { CartService } from '../shared/cart.service';
+import { AuthService } from '../core/services/auth.service';
+import { ProdutoService } from '../core/services/catalogo/produto.service';
+import { Produto } from '../shared/models';
 
 @Component({
   selector: 'app-home',
@@ -11,10 +14,67 @@ import { CartService } from '../shared/cart.service';
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
-export class HomeComponent {
-  constructor(private cart: CartService) {}
+export class HomeComponent implements OnInit {
+  currentUser: any = null;
+  firstName: string = '';
+  showUserMenu: boolean = false;
+  produtosDestaque: Produto[] = [];
+
+  constructor(
+    private cart: CartService,
+    private authService: AuthService,
+    private router: Router,
+    private produtoService: ProdutoService
+  ) {}
+
+  ngOnInit() {
+    // Observar mudanças no usuário logado
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      if (user && user.nome) {
+        // Pegar apenas o primeiro nome
+        this.firstName = user.nome.split(' ')[0];
+      } else {
+        this.firstName = '';
+      }
+    });
+
+    // Carregar produtos em destaque
+    this.produtoService.listarProdutosEmDestaque().subscribe({
+      next: (produtos) => {
+        this.produtosDestaque = produtos;
+      },
+      error: (err) => {
+        console.error('Erro ao carregar produtos em destaque:', err);
+        // Se houver erro, usar produtos fictícios como fallback
+        this.produtosDestaque = [];
+      }
+    });
+  }
 
   getCartCount() { return this.cart.getCount(); }
+
+  isAuthenticated(): boolean {
+    return this.authService.isAuthenticated;
+  }
+
+  isAdmin(): boolean {
+    return this.currentUser?.tipoUsuario === 'admin';
+  }
+
+  toggleUserMenu(): void {
+    this.showUserMenu = !this.showUserMenu;
+  }
+
+  closeUserMenu(): void {
+    this.showUserMenu = false;
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.showUserMenu = false;
+    this.router.navigate(['/']);
+  }
   contactForm = {
     nome: '',
     email: '',
@@ -70,10 +130,17 @@ export class HomeComponent {
     // ContactService.sendMessage(this.contactForm)
   }
 
-  addFeaturedToCart(produto: any, index: number) {
-    // Converter o precoAtual (string "R$ xxx,yy") para number simples
-    const price = Number((produto.precoAtual || '0').toString().replace(/[^0-9,]/g, '').replace(',', '.')) || 0;
-    const id = 1000 + index; // id sintético para destaques
-    this.cart.addItem({ id, name: produto.nome, price, image: produto.imagem }, 1);
+  goToCatalogWithProduct(produto: Produto) {
+    // Navegar para o catálogo passando o ID real do produto
+    this.router.navigate(['/catalogo'], {
+      queryParams: {
+        openProduct: produto.id,
+        fromHome: 'true'
+      }
+    });
+  }
+
+  formatPrice(preco: number): string {
+    return `R$ ${preco.toFixed(2).replace('.', ',')}`;
   }
 }

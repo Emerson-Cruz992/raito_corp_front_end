@@ -8,7 +8,13 @@ export interface Produto {
   descricao?: string;
   preco: number;
   ativo: boolean;
+  emDestaque?: boolean;
+  isNovidade?: boolean;
+  isPromocao?: boolean;
+  precoOriginal?: number;
+  imagemUrl?: string;
   criadoEm?: Date;
+  quantidadeEstoque?: number; // Quantidade disponível no estoque
 }
 
 /**
@@ -19,6 +25,10 @@ export interface CriarProdutoDTO {
   descricao?: string;
   preco: number;
   ativo?: boolean;
+  emDestaque?: boolean;
+  isNovidade?: boolean;
+  isPromocao?: boolean;
+  precoOriginal?: number;
 }
 
 /**
@@ -29,4 +39,8 @@ export interface AtualizarProdutoDTO {
   descricao?: string;
   preco?: number;
   ativo?: boolean;
+  emDestaque?: boolean;
+  isNovidade?: boolean;
+  isPromocao?: boolean;
+  precoOriginal?: number;
 }

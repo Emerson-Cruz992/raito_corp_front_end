@@ -20,7 +20,6 @@
       <span>Estoque Atual</span>
       <span>Alerta em</span>
       <span>Status</span>
-      <span>Ações</span>
     </div>
     <div class="table-row" *ngFor="let product of allProducts">
       <span class="product-name">{{product.nome}}</span>
@@ -32,7 +31,6 @@
           {{product.estoque <= 5 ? 'Crítico' : product.estoque <= 10 ? 'Normal' : 'Normal'}}
         </span>
       </span>
-      <button class="btn-update">Atualizar</button>
     </div>
   </div>
 </div>
