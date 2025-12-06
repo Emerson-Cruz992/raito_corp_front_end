@@ -1,0 +1,83 @@
+<div class="verify-container">
+  <div class="verify-card">
+    <div class="verify-header">
+      <div class="lock-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <h1>Verificação em Duas Etapas</h1>
+      <p *ngIf="!useBackupCode">Insira o código de 6 dígitos do seu aplicativo autenticador</p>
+      <p *ngIf="useBackupCode">Insira um código de backup</p>
+    </div>
+
+    <div class="error-message" *ngIf="errorMessage">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ errorMessage }}
+    </div>
+
+    <form (ngSubmit)="onSubmit()" class="verify-form">
+      <div class="code-input-container" *ngIf="!useBackupCode">
+        <input
+          type="text"
+          class="code-input"
+          [(ngModel)]="verificationCode"
+          name="verificationCode"
+          maxlength="6"
+          pattern="\d{6}"
+          placeholder="000000"
+          autocomplete="off"
+          [disabled]="isLoading"
+          autofocus>
+      </div>
+
+      <div class="backup-code-container" *ngIf="useBackupCode">
+        <input
+          type="text"
+          class="backup-code-input"
+          [(ngModel)]="backupCode"
+          name="backupCode"
+          placeholder="Digite seu código de backup"
+          autocomplete="off"
+          [disabled]="isLoading"
+          autofocus>
+      </div>
+
+      <button
+        type="submit"
+        class="verify-btn"
+        [disabled]="isLoading || (!useBackupCode && verificationCode.length !== 6) || (useBackupCode && !backupCode.trim())">
+        <span *ngIf="!isLoading">Verificar</span>
+        <span *ngIf="isLoading">
+          <svg class="loading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          Verificando...
+        </span>
+      </button>
+
+      <div class="verify-options">
+        <button type="button" class="link-btn" (click)="toggleBackupCode()" [disabled]="isLoading">
+          {{ useBackupCode ? 'Usar código do app' : 'Usar código de backup' }}
+        </button>
+        <button type="button" class="link-btn" (click)="cancelVerification()" [disabled]="isLoading">
+          Cancelar e voltar ao login
+        </button>
+      </div>
+
+      <div class="security-notice">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <p>Protegemos sua conta com autenticação de dois fatores. Nunca compartilhe seus códigos.</p>
+      </div>
+    </form>
+  </div>
+</div>

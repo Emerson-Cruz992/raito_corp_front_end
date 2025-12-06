@@ -26,6 +26,9 @@ export class ProductModalComponent implements OnInit, OnChanges {
     receita: 0,
     descricao: '',
     emDestaque: false,
+    isNovidade: false,
+    isPromocao: false,
+    precoOriginal: 0,
     imagem: ''
   };
 
@@ -70,6 +73,9 @@ export class ProductModalComponent implements OnInit, OnChanges {
         receita: 0,
         descricao: '',
         emDestaque: false,
+        isNovidade: false,
+        isPromocao: false,
+        precoOriginal: 0,
         imagem: ''
       };
       this.precoDisplay = '0,00';
@@ -102,6 +108,11 @@ export class ProductModalComponent implements OnInit, OnChanges {
 
   onSave() {
     if (this.formData.nome && this.formData.preco !== undefined) {
+      console.log('=== FORM DATA NO MODAL ===');
+      console.log('emDestaque:', this.formData.emDestaque);
+      console.log('isNovidade:', this.formData.isNovidade);
+      console.log('isPromocao:', this.formData.isPromocao);
+
       const timestamp = new Date().getTime();
       const productToSave: Product = {
         id: this.product?.id || `prod-${timestamp}`,
@@ -113,8 +124,16 @@ export class ProductModalComponent implements OnInit, OnChanges {
         receita: this.product?.receita || 0,
         descricao: this.formData.descricao || '',
         emDestaque: this.formData.emDestaque || false,
+        isNovidade: this.formData.isNovidade || false,
+        isPromocao: this.formData.isPromocao || false,
+        precoOriginal: this.formData.precoOriginal || 0,
         imagem: this.imagePreview || this.formData.imagem || ''
       };
+
+      console.log('=== PRODUCT TO SAVE ===');
+      console.log('emDestaque:', productToSave.emDestaque);
+      console.log('isNovidade:', productToSave.isNovidade);
+      console.log('isPromocao:', productToSave.isPromocao);
 
       // Emitir evento com produto e arquivo de imagem se houver
       this.save.emit(productToSave);

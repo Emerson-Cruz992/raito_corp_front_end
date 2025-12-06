@@ -151,9 +151,18 @@ export class CartComponent implements OnInit {
 
       // 2. Criar carrinho no backend
       const carrinho = await firstValueFrom(this.carrinhoService.criarCarrinho(idCliente));
+      console.log('Carrinho criado:', carrinho.idCarrinho);
+
+      // 2.1. Limpar carrinho backend (caso já exista com itens antigos)
+      console.log('Limpando carrinho do backend...');
+      await firstValueFrom(this.carrinhoService.limparCarrinho(carrinho.idCarrinho));
+      console.log('Carrinho limpo!');
 
       // 3. Adicionar itens ao carrinho
+      console.log('=== ADICIONANDO ITENS AO CARRINHO ===');
+      console.log('Total de itens:', this.items.length);
       for (const item of this.items) {
+        console.log(`Adicionando item: ${item.name}, Quantidade: ${item.qty}, Preço: ${item.price}`);
         await firstValueFrom(this.carrinhoService.adicionarItem(
           carrinho.idCarrinho,
           item.id.toString(),
@@ -161,6 +170,7 @@ export class CartComponent implements OnInit {
           item.price
         ));
       }
+      console.log('=== ITENS ADICIONADOS COM SUCESSO ===');
 
       // 4. Finalizar pedido
       await firstValueFrom(this.pedidoService.finalizarPedido(

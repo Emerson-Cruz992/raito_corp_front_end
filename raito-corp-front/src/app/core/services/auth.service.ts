@@ -4,10 +4,12 @@ import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { tap, catchError, map } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { TwoFactorAuthService } from './two-factor-auth.service';
 
 export interface LoginRequest {
   email: string;
   password: string;
+  twoFactorCode?: string;
 }
 
 export interface LoginResponse {
@@ -16,6 +18,8 @@ export interface LoginResponse {
   tokenType: string;
   expiresIn: number;
   user: User;
+  requiresTwoFactor?: boolean;
+  tempToken?: string;
 }
 
 export interface User {
@@ -23,6 +27,7 @@ export interface User {
   email: string;
   nome: string;
   role: UserRole;
+  twoFactorEnabled?: boolean;
 }
 
 export type UserRole = 'ADMIN' | 'USER' | 'MANAGER';
@@ -34,10 +39,14 @@ export class AuthService {
   private currentUserSubject: BehaviorSubject<User | null>;
   public currentUser$: Observable<User | null>;
   private tokenExpirationTimer: any;
+  private pendingTwoFactorSubject = new BehaviorSubject<boolean>(false);
+  public pendingTwoFactor$ = this.pendingTwoFactorSubject.asObservable();
+  private tempToken: string | null = null;
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private twoFactorService: TwoFactorAuthService
   ) {
     const storedUser = this.getStoredUser();
     this.currentUserSubject = new BehaviorSubject<User | null>(storedUser);
@@ -65,14 +74,54 @@ export class AuthService {
   /**
    * Realiza login no sistema
    */
-  login(email: string, password: string): Observable<LoginResponse> {
-    const loginRequest: LoginRequest = { email, password };
+  login(email: string, password: string, twoFactorCode?: string): Observable<LoginResponse> {
+    const loginRequest: LoginRequest = { email, password, twoFactorCode };
 
     return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, loginRequest)
       .pipe(
-        tap(response => this.handleAuthenticationSuccess(response)),
+        tap(response => {
+          if (response.requiresTwoFactor) {
+            // Login inicial bem-sucedido, mas precisa de 2FA
+            this.tempToken = response.tempToken || null;
+            this.pendingTwoFactorSubject.next(true);
+          } else {
+            // Login completo
+            this.handleAuthenticationSuccess(response);
+          }
+        }),
         catchError(error => this.handleAuthenticationError(error))
       );
+  }
+
+  /**
+   * Verifica o código 2FA e completa o login
+   */
+  verifyTwoFactor(userId: number, code: string): Observable<LoginResponse> {
+    return this.twoFactorService.verify(userId, code).pipe(
+      tap(verifyResponse => {
+        if (verifyResponse.valid) {
+          this.pendingTwoFactorSubject.next(false);
+          this.tempToken = null;
+        }
+      }),
+      catchError(error => {
+        return throwError(() => new Error('Código 2FA inválido'));
+      })
+    ) as any;
+  }
+
+  /**
+   * Obtém o status pendente de 2FA
+   */
+  get isPendingTwoFactor(): boolean {
+    return this.pendingTwoFactorSubject.value;
+  }
+
+  /**
+   * Obtém o token temporário (usado durante 2FA)
+   */
+  getTempToken(): string | null {
+    return this.tempToken;
   }
 
   /**

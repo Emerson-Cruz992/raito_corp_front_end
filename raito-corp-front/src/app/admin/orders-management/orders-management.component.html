@@ -26,14 +26,14 @@
       <span>Ações</span>
     </div>
     <div class="table-row" *ngFor="let order of orders">
-      <span class="order-id">{{order.idPedido}}</span>
-      <span>{{order.idCliente}}</span>
+      <span class="order-id">{{order.idPedido || '-'}}</span>
+      <span>{{order.idCliente || '-'}}</span>
       <span class="email">-</span>
-      <span>{{order.itens.length || 0}}</span>
+      <span>{{getTotalItems(order)}}</span>
       <span class="total">{{formatCurrency(order.valorTotal)}}</span>
-      <span>{{order.criadoEm | date:'short'}}</span>
+      <span>{{order.criadoEm ? (order.criadoEm | date:'dd/MM/yyyy HH:mm') : '-'}}</span>
       <span>
-        <span class="badge" [class]="getStatusColor(order.status)">{{order.status}}</span>
+        <span class="badge" [class]="getStatusColor(order.status)">{{order.status || 'PENDENTE'}}</span>
       </span>
       <button class="btn-view" (click)="openOrderDetails(order)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -54,7 +54,7 @@
         <p><strong>Pedido:</strong> {{selectedOrder.idPedido}}</p>
         <p><strong>Cliente ID:</strong> {{selectedOrder.idCliente}}</p>
         <p><strong>Endereço Entrega:</strong> {{selectedOrder.idEnderecoEntrega || 'Não informado'}}</p>
-        <p><strong>Itens:</strong> {{selectedOrder.itens.length || 0}}</p>
+        <p><strong>Itens:</strong> {{getTotalItems(selectedOrder)}}</p>
         <p><strong>Total:</strong> {{formatCurrency(selectedOrder.valorTotal)}}</p>
         <p><strong>Data:</strong> {{selectedOrder.criadoEm | date:'short'}}</p>
         <div class="form-group">

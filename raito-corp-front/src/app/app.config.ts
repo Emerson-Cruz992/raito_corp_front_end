@@ -6,6 +6,7 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { sanitizeResponseInterceptor } from './core/interceptors/sanitize-response.interceptor';
 import { ErrorHandlerService } from './core/services/error-handler.service';
 
 export const appConfig: ApplicationConfig = {
@@ -14,7 +15,11 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
     provideHttpClient(
-      withInterceptors([authInterceptor, errorInterceptor])
+      withInterceptors([
+        authInterceptor,
+        sanitizeResponseInterceptor,
+        errorInterceptor
+      ])
     ),
     {
       provide: ErrorHandler,

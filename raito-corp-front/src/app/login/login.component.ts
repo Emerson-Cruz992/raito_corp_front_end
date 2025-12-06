@@ -5,6 +5,8 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
 import { CredencialService } from '../core/services/cadastro/credencial.service';
 import { UsuarioService } from '../core/services/cadastro/usuario.service';
+import { PasswordValidatorService, PasswordStrength } from '../core/services/password-validator.service';
+import { RateLimiterService } from '../core/services/rate-limiter.service';
 
 @Component({
   selector: 'app-login',
@@ -34,13 +36,17 @@ export class LoginComponent implements OnInit {
   isLoading = false;
   showPassword = false;
   showConfirmPassword = false;
+  passwordStrength: PasswordStrength | null = null;
+  showPasswordStrength = false;
 
   constructor(
     private authService: AuthService,
     private credencialService: CredencialService,
     private usuarioService: UsuarioService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private passwordValidator: PasswordValidatorService,
+    private rateLimiter: RateLimiterService
   ) {}
 
   ngOnInit() {
@@ -71,6 +77,14 @@ export class LoginComponent implements OnInit {
       return;
     }
 
+    // Verifica rate limiting
+    const rateLimitCheck = this.rateLimiter.checkLimit(this.loginForm.email, 'login');
+    if (!rateLimitCheck.allowed) {
+      const waitTime = this.rateLimiter.getWaitTimeMessage(rateLimitCheck.retryAfter || 0);
+      this.errorMessage = `Muitas tentativas de login falhadas. Tente novamente em ${waitTime}.`;
+      return;
+    }
+
     this.isLoading = true;
 
     // Fazer login via API
@@ -86,6 +100,9 @@ export class LoginComponent implements OnInit {
               next: (usuario) => {
                 // Salvar dados do usuário no AuthService com o token do login
                 this.authService.setCurrentUser(usuario, response.token);
+
+                // Login bem-sucedido - limpa rate limit
+                this.rateLimiter.recordSuccess(this.loginForm.email, 'login');
 
                 this.isLoading = false;
 
@@ -141,8 +158,21 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    if (this.registerForm.password.length < 6) {
-      this.errorMessage = 'Senha deve ter no mínimo 6 caracteres';
+    // Validação forte de senha
+    const passwordValidation = this.passwordValidator.validatePassword(this.registerForm.password);
+    if (!passwordValidation.passed) {
+      this.errorMessage = passwordValidation.feedback.join('. ');
+      this.showPasswordStrength = true;
+      return;
+    }
+
+    // Verifica informações pessoais na senha
+    const personalInfo = [
+      this.registerForm.nome,
+      this.registerForm.email.split('@')[0]
+    ];
+    if (this.passwordValidator.containsPersonalInfo(this.registerForm.password, personalInfo)) {
+      this.errorMessage = 'A senha não deve conter seu nome ou email';
       return;
     }
 
@@ -234,5 +264,32 @@ export class LoginComponent implements OnInit {
 
   toggleConfirmPasswordVisibility() {
     this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  // Atualiza a força da senha enquanto o usuário digita
+  onPasswordChange() {
+    if (this.registerForm.password.length > 0) {
+      this.passwordStrength = this.passwordValidator.validatePassword(this.registerForm.password);
+      this.showPasswordStrength = true;
+    } else {
+      this.showPasswordStrength = false;
+      this.passwordStrength = null;
+    }
+  }
+
+  getPasswordStrengthClass(): string {
+    if (!this.passwordStrength) return '';
+    return `strength-${this.passwordStrength.level}`;
+  }
+
+  getPasswordStrengthLabel(): string {
+    if (!this.passwordStrength) return '';
+    const labels = {
+      'weak': 'Fraca',
+      'medium': 'Média',
+      'strong': 'Forte',
+      'very-strong': 'Muito Forte'
+    };
+    return labels[this.passwordStrength.level];
   }
 }

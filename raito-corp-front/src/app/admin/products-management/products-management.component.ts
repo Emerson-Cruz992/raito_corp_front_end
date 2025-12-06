@@ -93,6 +93,9 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
         isPromocao: product.isPromocao
       };
 
+      console.log('Product received from modal:', product);
+      console.log('UpdateDTO being sent to backend:', updateDTO);
+
       this.produtoService.atualizarProduto(idProduto, updateDTO)
         .pipe(
           switchMap((produtoAtualizado) => {
@@ -107,11 +110,6 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
             // Atualizar categoria se fornecida
             if (product.categoria) {
               promises.push(this.produtoService.associarCategoriaPorNome(produtoAtualizado.id, product.categoria).toPromise());
-            }
-
-            // Atualizar campo emDestaque se necessário
-            if (product.emDestaque !== undefined) {
-              promises.push(this.produtoService.marcarComoDestaque(produtoAtualizado.id, product.emDestaque).toPromise());
             }
 
             // Atualizar estoque se fornecido

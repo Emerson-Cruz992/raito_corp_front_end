@@ -70,6 +70,9 @@ export class CatalogComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    // Carregar categorias primeiro
+    this.loadCategories();
+
     // Carregar produtos do backend
     this.loadProductsFromBackend();
 
@@ -91,6 +94,32 @@ export class CatalogComponent implements OnInit {
   }
 
   /**
+   * Carrega categorias do backend
+   */
+  loadCategories() {
+    this.http.get<any[]>(`${environment.apiUrl}/categorias`).subscribe({
+      next: (categorias) => {
+        // Resetar categorias com "Todos"
+        this.categories = [
+          { name: 'Todos', count: 0, slug: 'todos' }
+        ];
+
+        // Adicionar categorias do backend
+        categorias.forEach(cat => {
+          this.categories.push({
+            name: cat.nome,
+            count: 0, // Será atualizado depois de carregar produtos
+            slug: cat.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          });
+        });
+      },
+      error: (error) => {
+        console.error('Erro ao carregar categorias:', error);
+      }
+    });
+  }
+
+  /**
    * Carrega produtos do backend COM ESTOQUE
    */
   loadProductsFromBackend() {
@@ -104,7 +133,7 @@ export class CatalogComponent implements OnInit {
           .map((p) => ({
             id: p.id,  // Usar o UUID real do banco de dados
             name: p.nome,
-            category: 'Iluminação',
+            category: p.categorias && p.categorias.length > 0 ? p.categorias[0] : 'Sem Categoria',
             price: p.preco,
             originalPrice: p.precoOriginal,
             image: p.imagemUrl || 'https://images.unsplash.com/photo-1517991104123-023dcd3118c9?w=400',
@@ -115,7 +144,9 @@ export class CatalogComponent implements OnInit {
             description: p.descricao
           }));
 
-        this.categories[0].count = this.allProducts.length;
+        // Atualizar contagem de produtos por categoria
+        this.updateCategoryCounts();
+
         this.filteredProducts = [...this.allProducts];
         this.currentProducts = [...this.allProducts];
         this.applyFilters();
@@ -125,6 +156,26 @@ export class CatalogComponent implements OnInit {
         this.allProducts = [];
         this.filteredProducts = [];
         this.currentProducts = [];
+      }
+    });
+  }
+
+  /**
+   * Atualiza a contagem de produtos por categoria
+   */
+  updateCategoryCounts() {
+    // Resetar contadores
+    this.categories.forEach(cat => cat.count = 0);
+
+    // Contar produtos por categoria
+    this.allProducts.forEach(product => {
+      // Contar para "Todos"
+      this.categories[0].count++;
+
+      // Contar para categoria específica
+      const category = this.categories.find(c => c.name === product.category);
+      if (category) {
+        category.count++;
       }
     });
   }

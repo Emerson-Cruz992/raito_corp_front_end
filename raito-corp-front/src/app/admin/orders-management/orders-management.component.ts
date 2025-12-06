@@ -29,8 +29,17 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
   loadOrders() {
     this.pedidoService.listarTodos()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(orders => {
-        this.orders = orders;
+      .subscribe({
+        next: (orders) => {
+          this.orders = orders || [];
+          console.log('Pedidos carregados:', this.orders.length);
+          console.log('Dados completos dos pedidos:', JSON.stringify(orders, null, 2));
+        },
+        error: (error) => {
+          console.error('Erro ao carregar pedidos:', error);
+          this.orders = [];
+          alert('Erro ao carregar pedidos. Por favor, tente novamente.');
+        }
       });
   }
 
@@ -70,7 +79,10 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  formatCurrency(value: number): string {
+  formatCurrency(value: number | null | undefined): string {
+    if (value === null || value === undefined) {
+      return 'R$ 0,00';
+    }
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
@@ -83,5 +95,12 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
       'CANCELADO': 'danger'
     };
     return colors[status];
+  }
+
+  getTotalItems(order: Pedido): number {
+    if (!order.itens || order.itens.length === 0) {
+      return 0;
+    }
+    return order.itens.reduce((total, item) => total + (item.quantidade || 0), 0);
   }
 }
