@@ -398,7 +398,10 @@ export class AdminDataService {
     const salesByMonth: { [key: string]: { pedidos: number, receita: number } } = {};
 
     this.orders.forEach(order => {
-      const date = new Date(order.data.split('/').reverse().join('-'));
+      // order.data vem como string formatada "dd/MM/yyyy" (ex: "31/10/2025")
+      const [day, month, year] = order.data.split('/');
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
       const monthKey = date.toLocaleString('pt-BR', { month: 'short' });
       const monthLabel = monthKey.charAt(0).toUpperCase() + monthKey.slice(1, 3);
 

@@ -90,8 +90,6 @@ export class LoginComponent implements OnInit {
     // Fazer login via API
     this.credencialService.login(this.loginForm.email, this.loginForm.password).subscribe({
       next: (response) => {
-        console.log('Login bem-sucedido:', response);
-
         // Buscar dados do usuário para saber o tipo
         this.credencialService.buscarPorEmail(this.loginForm.email).subscribe({
           next: (credencial) => {
@@ -207,7 +205,6 @@ export class LoginComponent implements OnInit {
           senhaHash: this.registerForm.password
         }).subscribe({
           next: (credencial) => {
-            console.log('Cadastro realizado com sucesso!', { usuario, credencial });
             this.isLoading = false;
 
             // Fazer login automático após cadastro

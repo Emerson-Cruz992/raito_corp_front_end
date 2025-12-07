@@ -40,8 +40,6 @@ export class ProdutoService {
    * API: PATCH /api/produtos/{idProduto}
    */
   atualizarProduto(id: string, produto: AtualizarProdutoDTO): Observable<Produto> {
-    console.log('=== PRODUTO SERVICE - ENVIANDO PARA API (PATCH) ===');
-    console.log('Payload completo:', JSON.stringify(produto, null, 2));
     return this.api.patch<Produto>(`${this.endpoint}/${id}`, produto);
   }
 

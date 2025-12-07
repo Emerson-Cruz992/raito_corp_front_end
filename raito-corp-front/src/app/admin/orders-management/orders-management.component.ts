@@ -15,9 +15,11 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class OrdersManagementComponent implements OnInit, OnDestroy {
   orders: Pedido[] = [];
+  filteredOrders: Pedido[] = [];
   selectedOrder: Pedido | null = null;
   showModal = false;
   statusOptions: StatusPedido[] = ['PENDENTE', 'PROCESSANDO', 'ENVIADO', 'ENTREGUE', 'CANCELADO'];
+  selectedFilter: StatusPedido | 'TODOS' = 'TODOS';
   private destroy$ = new Subject<void>();
 
   constructor(private pedidoService: PedidoService) {}
@@ -32,15 +34,35 @@ export class OrdersManagementComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (orders) => {
           this.orders = orders || [];
-          console.log('Pedidos carregados:', this.orders.length);
-          console.log('Dados completos dos pedidos:', JSON.stringify(orders, null, 2));
+          this.applyFilter();
         },
         error: (error) => {
           console.error('Erro ao carregar pedidos:', error);
           this.orders = [];
+          this.filteredOrders = [];
           alert('Erro ao carregar pedidos. Por favor, tente novamente.');
         }
       });
+  }
+
+  filterByStatus(status: StatusPedido | 'TODOS') {
+    this.selectedFilter = status;
+    this.applyFilter();
+  }
+
+  applyFilter() {
+    if (this.selectedFilter === 'TODOS') {
+      this.filteredOrders = [...this.orders];
+    } else {
+      this.filteredOrders = this.orders.filter(order => order.status === this.selectedFilter);
+    }
+  }
+
+  getFilteredCount(status: StatusPedido | 'TODOS'): number {
+    if (status === 'TODOS') {
+      return this.orders.length;
+    }
+    return this.orders.filter(order => order.status === status).length;
   }
 
   ngOnDestroy() {

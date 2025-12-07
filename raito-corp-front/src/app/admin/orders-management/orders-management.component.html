@@ -7,11 +7,21 @@
   </div>
 
   <div class="status-tabs">
-    <button class="tab active">Todos ({{orders.length}})</button>
-    <button class="tab">Pendentes</button>
-    <button class="tab">Processando</button>
-    <button class="tab">Enviados</button>
-    <button class="tab">Entregues</button>
+    <button class="tab" [class.active]="selectedFilter === 'TODOS'" (click)="filterByStatus('TODOS')">
+      Todos ({{getFilteredCount('TODOS')}})
+    </button>
+    <button class="tab" [class.active]="selectedFilter === 'PENDENTE'" (click)="filterByStatus('PENDENTE')">
+      Pendentes ({{getFilteredCount('PENDENTE')}})
+    </button>
+    <button class="tab" [class.active]="selectedFilter === 'PROCESSANDO'" (click)="filterByStatus('PROCESSANDO')">
+      Processando ({{getFilteredCount('PROCESSANDO')}})
+    </button>
+    <button class="tab" [class.active]="selectedFilter === 'ENVIADO'" (click)="filterByStatus('ENVIADO')">
+      Enviados ({{getFilteredCount('ENVIADO')}})
+    </button>
+    <button class="tab" [class.active]="selectedFilter === 'ENTREGUE'" (click)="filterByStatus('ENTREGUE')">
+      Entregues ({{getFilteredCount('ENTREGUE')}})
+    </button>
   </div>
 
   <div class="orders-table">
@@ -25,7 +35,7 @@
       <span>Status</span>
       <span>Ações</span>
     </div>
-    <div class="table-row" *ngFor="let order of orders">
+    <div class="table-row" *ngFor="let order of filteredOrders">
       <span class="order-id">{{order.idPedido || '-'}}</span>
       <span>{{order.idCliente || '-'}}</span>
       <span class="email">-</span>

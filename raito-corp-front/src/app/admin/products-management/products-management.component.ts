@@ -93,9 +93,6 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
         isPromocao: product.isPromocao
       };
 
-      console.log('Product received from modal:', product);
-      console.log('UpdateDTO being sent to backend:', updateDTO);
-
       this.produtoService.atualizarProduto(idProduto, updateDTO)
         .pipe(
           switchMap((produtoAtualizado) => {
