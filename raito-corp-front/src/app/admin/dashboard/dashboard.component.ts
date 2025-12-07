@@ -57,13 +57,15 @@ export class DashboardComponent implements OnInit {
   }
 
   getSalesBarHeight(receita: number): number {
+    // Altura máxima disponível para a barra (altura do container - label - gaps)
+    const maxHeight = 230;
     if (!receita || receita === 0) {
-      return 0;
+      return 20; // Altura mínima de 20px para barras sem valor
     }
     const max = this.getMaxSalesValue();
-    const percentage = (receita / max) * 100;
-    // Garantir altura mínima de 10% para valores muito pequenos serem visíveis
-    return Math.max(percentage, 10);
+    const percentage = receita / max;
+    // Calcular altura em pixels (mínimo 30px para ser visível)
+    return Math.max(percentage * maxHeight, 30);
   }
 
   getCategoryColor(index: number): string {

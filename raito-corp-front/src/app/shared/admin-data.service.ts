@@ -274,12 +274,11 @@ export class AdminDataService {
           });
         }
 
-        // Criar estoque para o produto se fornecido
-        if (product.estoque && product.estoque > 0) {
-          this.estoqueService.adicionarEstoque(novoProduto.id, product.estoque).subscribe({
-            error: (err: any) => console.error('Erro ao criar estoque:', err)
-          });
-        }
+        // Criar estoque para o produto (sempre, mesmo se for 0)
+        const quantidadeEstoque = product.estoque ?? 0;
+        this.estoqueService.adicionarEstoque(novoProduto.id, quantidadeEstoque).subscribe({
+          error: (err: any) => console.error('Erro ao criar estoque:', err)
+        });
         // Recarregar dados
         this.loadRealData();
       },
@@ -307,15 +306,10 @@ export class AdminDataService {
           });
         }
 
-        // Atualizar estoque se necessário
+        // Atualizar estoque se necessário (o backend agora faz upsert automaticamente)
         if (updates.estoque !== undefined) {
           this.estoqueService.atualizarEstoque(id, updates.estoque!).subscribe({
-            error: (err: any) => {
-              // Se falhar, tentar adicionar estoque
-              this.estoqueService.adicionarEstoque(id, updates.estoque!).subscribe({
-                error: (err2: any) => console.error('Erro ao criar/atualizar estoque:', err2)
-              });
-            }
+            error: (err: any) => console.error('Erro ao atualizar estoque:', err)
           });
         }
         // Recarregar dados

@@ -151,12 +151,24 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
       this.produtoService.criarProduto(createDTO)
         .pipe(
           switchMap((novoProduto) => {
+            const promises: Promise<any>[] = [];
+
             // Se houver imagem selecionada, fazer upload
             const imageFile = this.productModal?.getSelectedImageFile();
             if (imageFile) {
-              return this.produtoService.uploadImagem(novoProduto.id, imageFile);
+              promises.push(this.produtoService.uploadImagem(novoProduto.id, imageFile).toPromise());
             }
-            return [novoProduto];
+
+            // Associar categoria se fornecida
+            if (product.categoria) {
+              promises.push(this.produtoService.associarCategoriaPorNome(novoProduto.id, product.categoria).toPromise());
+            }
+
+            // Criar estoque para o novo produto
+            const quantidadeEstoque = product.estoque ?? 0;
+            promises.push(this.estoqueService.adicionarEstoque(novoProduto.id, quantidadeEstoque).toPromise());
+
+            return Promise.all(promises).then(() => novoProduto);
           }),
           takeUntil(this.destroy$)
         )
@@ -165,7 +177,10 @@ export class ProductsManagementComponent implements OnInit, OnDestroy {
             this.isSaving = false;
             this.closeModal();
             // Recarregar lista de produtos
-            this.loadProducts();
+            this.adminDataService.reloadData();
+            setTimeout(() => {
+              this.loadProducts();
+            }, 500);
             this.notification.success('Sucesso!', 'Produto criado com sucesso!');
           },
           error: (error) => {

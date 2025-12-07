@@ -64,7 +64,7 @@
       <div class="bar-chart">
         <div class="chart-bars">
           <div class="bar-group" *ngFor="let sale of salesByMonth">
-            <div class="bar" [style.height.%]="getSalesBarHeight(sale.receita)">
+            <div class="bar" [style.height.px]="getSalesBarHeight(sale.receita)">
               <span class="bar-value">{{formatCurrency(sale.receita)}}</span>
             </div>
             <span class="bar-label">{{sale.mes}}</span>

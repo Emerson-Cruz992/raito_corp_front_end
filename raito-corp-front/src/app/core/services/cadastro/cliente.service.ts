@@ -52,4 +52,11 @@ export class ClienteService {
   deletarCliente(id: string): Observable<void> {
     return this.api.delete<void>(`${this.endpoint}/${id}`);
   }
+
+  /**
+   * Busca clientes por ID do usuário
+   */
+  buscarPorUsuario(idUsuario: string): Observable<Cliente[]> {
+    return this.api.get<Cliente[]>(`${this.endpoint}/usuario/${idUsuario}`);
+  }
 }
