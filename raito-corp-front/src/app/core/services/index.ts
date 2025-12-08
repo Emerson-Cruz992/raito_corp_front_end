@@ -11,9 +11,6 @@ export * from './cadastro/perfil-acesso.service';
 
 // Services de Catálogo
 export * from './catalogo/produto.service';
-export * from './catalogo/categoria.service';
-export * from './catalogo/imagem-produto.service';
-export * from './catalogo/caracteristica-iluminacao.service';
 
 // Services de Estoque
 export * from './estoque/estoque.service';
@@ -22,7 +19,5 @@ export * from './estoque/estoque.service';
 export * from './vendas/carrinho.service';
 export * from './vendas/pedido.service';
 
-// Manter compatibilidade com services antigos
+// Auth service
 export * from './auth.service';
-export * from './product.service';
-export * from './order.service';
